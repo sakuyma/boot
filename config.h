@@ -143,7 +143,6 @@ struct color_theme {
     uint32_t url;
 
     uint32_t dim[8];
-    uint32_t sixel[16];
 
     enum {
         DIM_BLEND_TOWARDS_BLACK,
@@ -456,7 +455,7 @@ struct config {
         float box_drawing_base_thickness;
         bool box_drawing_solid_shades;
         bool font_monospace_warn;
-        bool sixel;
+        bool kitty_graphics;
         enum shm_bit_depth surface_bit_depth;
         uint32_t min_stride_alignment;
         bool preapply_damage;

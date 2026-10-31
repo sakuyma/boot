@@ -1107,12 +1107,6 @@ The default theme used is *colors-dark*, unless
 	https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit for an
 	explanation of the remainder.
 
-*sixel0* *..* *sixel15*
-	The default sixel color palette. Default: _000000_, _3333cc_,
-	_cc2121_, _33cc33_, _cc33cc_, _33cccc_, _cccc33_, _878787_,
-	_424242_, _545499_, _994242_, _549954_, _995499_, _549999_,
-	_999954_, _cccccc_.
-
 *alpha*
 	Background translucency. A value in the range 0.0-1.0, where 0.0
 	means completely transparent, and 1.0 is opaque. Default: _1.0_.
@@ -2106,9 +2100,9 @@ any of these options.
 	
 	Default: _256_
 
-*sixel*
-	Boolean. When enabled, foot will process sixel images. Default:
-	_yes_
+*kitty-graphics*
+	Boolean. When enabled, boot will process kitty graphics protocol
+	images. Default: _yes_
 
 *dim-amount*
 	Amount by which dimmed text is darkened. Default: _1.5_.

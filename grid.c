@@ -9,7 +9,7 @@
 #include "log.h"
 #include "debug.h"
 #include "macros.h"
-#include "sixel.h"
+#include "image.h"
 #include "stride.h"
 #include "util.h"
 #include "xmalloc.h"
@@ -283,7 +283,7 @@ grid_snapshot(const struct grid *grid)
     clone->kitty_kbd = grid->kitty_kbd;
     clone->rows = xcalloc(grid->num_rows, sizeof(clone->rows[0]));
     memset(&clone->scroll_damage, 0, sizeof(clone->scroll_damage));
-    memset(&clone->sixel_images, 0, sizeof(clone->sixel_images));
+    memset(&clone->image_placements, 0, sizeof(clone->image_placements));
 
     tll_foreach(grid->scroll_damage, it)
         tll_push_back(clone->scroll_damage, it->item);
@@ -331,7 +331,7 @@ grid_snapshot(const struct grid *grid)
             clone_row->extra = NULL;
     }
 
-    tll_foreach(grid->sixel_images, it) {
+    tll_foreach(grid->image_placements, it) {
         int original_width = it->item.original.width;
         int original_height = it->item.original.height;
         pixman_image_t *original_pix = it->item.original.pix;
@@ -366,7 +366,7 @@ grid_snapshot(const struct grid *grid)
                 scaled_stride);
         }
 
-        struct sixel six = {
+        struct image_placement six = {
             .pix = (it->item.pix == it->item.original.pix
                     ? new_original_pix
                     : (it->item.pix == it->item.scaled.pix
@@ -378,6 +378,12 @@ grid_snapshot(const struct grid *grid)
             .cols = it->item.cols,
             .pos = it->item.pos,
             .opaque = it->item.opaque,
+            .offset_x = it->item.offset_x,
+            .offset_y = it->item.offset_y,
+            .image_id = it->item.image_id,
+            .image_number = it->item.image_number,
+            .placement_id = it->item.placement_id,
+            .z = it->item.z,
             .cell_width = it->item.cell_width,
             .cell_height = it->item.cell_height,
             .original = {
@@ -394,7 +400,7 @@ grid_snapshot(const struct grid *grid)
             },
         };
 
-        tll_push_back(clone->sixel_images, six);
+        tll_push_back(clone->image_placements, six);
     }
 
     return clone;
@@ -409,9 +415,9 @@ grid_free(struct grid *grid)
     for (int r = 0; r < grid->num_rows; r++)
         grid_row_free(grid->rows[r]);
 
-    tll_foreach(grid->sixel_images, it) {
-        sixel_destroy(&it->item);
-        tll_remove(grid->sixel_images, it);
+    tll_foreach(grid->image_placements, it) {
+        image_placement_destroy(&it->item);
+        tll_remove(grid->image_placements, it);
     }
 
     free(grid->rows);
@@ -478,10 +484,10 @@ grid_resize_without_reflow(
 
     struct row **new_grid = xcalloc(new_rows, sizeof(new_grid[0]));
 
-    tll(struct sixel) untranslated_sixels = tll_init();
-    tll_foreach(grid->sixel_images, it)
-        tll_push_back(untranslated_sixels, it->item);
-    tll_free(grid->sixel_images);
+    tll(struct image_placement) untranslated_images = tll_init();
+    tll_foreach(grid->image_placements, it)
+        tll_push_back(untranslated_images, it->item);
+    tll_free(grid->image_placements);
 
     int new_offset = 0;
 
@@ -516,19 +522,19 @@ grid_resize_without_reflow(
                 new_row->cells[i - 1].wc = 0;
         }
 
-        /* Map sixels on current "old" row to current "new row" */
-        tll_foreach(untranslated_sixels, it) {
+        /* Map images on current "old" row to current "new row" */
+        tll_foreach(untranslated_images, it) {
             if (it->item.pos.row != old_row_idx)
                 continue;
 
-            struct sixel sixel = it->item;
-            sixel.pos.row = new_row_idx;
+            struct image_placement image = it->item;
+            image.pos.row = new_row_idx;
 
-            if (sixel.pos.col < new_cols)
-                tll_push_back(grid->sixel_images, sixel);
+            if (image.pos.col < new_cols)
+                tll_push_back(grid->image_placements, image);
             else
-                sixel_destroy(&it->item);
-            tll_remove(untranslated_sixels, it);
+                image_placement_destroy(&it->item);
+            tll_remove(untranslated_images, it);
         }
 
         /* Copy URI ranges, truncating them if necessary */
@@ -626,10 +632,10 @@ grid_resize_without_reflow(
     grid->cursor.lcf = false;
     grid->saved_cursor.lcf = false;
 
-    /* Free sixels we failed to "map" to the new grid */
-    tll_foreach(untranslated_sixels, it)
-        sixel_destroy(&it->item);
-    tll_free(untranslated_sixels);
+    /* Free images we failed to "map" to the new grid */
+    tll_foreach(untranslated_images, it)
+        image_placement_destroy(&it->item);
+    tll_free(untranslated_images);
 
 #if defined(_DEBUG)
     for (int r = 0; r < new_screen_rows; r++)
@@ -715,10 +721,10 @@ _line_wrap(struct grid *old_grid, struct row **new_grid, struct row *row,
         new_row->shell_integration.cmd_start = -1;
         new_row->shell_integration.cmd_end = -1;
 
-        tll_foreach(old_grid->sixel_images, it) {
+        tll_foreach(old_grid->image_placements, it) {
             if (it->item.pos.row == *row_idx) {
-                sixel_destroy(&it->item);
-                tll_remove(old_grid->sixel_images, it);
+                image_placement_destroy(&it->item);
+                tll_remove(old_grid->image_placements, it);
             }
         }
 
@@ -845,10 +851,10 @@ grid_resize_and_reflow(
      * at the output that is *oldest* */
     int offset = grid->offset + old_screen_rows;
 
-    tll(struct sixel) untranslated_sixels = tll_init();
-    tll_foreach(grid->sixel_images, it)
-        tll_push_back(untranslated_sixels, it->item);
-    tll_free(grid->sixel_images);
+    tll(struct image_placement) untranslated_images = tll_init();
+    tll_foreach(grid->image_placements, it)
+        tll_push_back(untranslated_images, it->item);
+    tll_free(grid->image_placements);
 
     /* Turn cursor coordinates into grid absolute coordinates */
     struct coord cursor = grid->cursor.point;
@@ -906,16 +912,16 @@ grid_resize_and_reflow(
         if (old_row == NULL)
             continue;
 
-        /* Map sixels on current "old" row to current "new row" */
-        tll_foreach(untranslated_sixels, it) {
+        /* Map images on current "old" row to current "new row" */
+        tll_foreach(untranslated_images, it) {
             if (it->item.pos.row != old_row_idx)
                 continue;
 
-            struct sixel sixel = it->item;
-            sixel.pos.row = new_row_idx;
+            struct image_placement image = it->item;
+            image.pos.row = new_row_idx;
 
-            tll_push_back(grid->sixel_images, sixel);
-            tll_remove(untranslated_sixels, it);
+            tll_push_back(grid->image_placements, image);
+            tll_remove(untranslated_images, it);
         }
 
 #define line_wrap()                                                 \
@@ -1278,10 +1284,10 @@ grid_resize_and_reflow(
     grid->cursor.point = cursor;
     grid->saved_cursor.point = saved_cursor;
 
-    /* Free sixels we failed to "map" to the new grid */
-    tll_foreach(untranslated_sixels, it)
-        sixel_destroy(&it->item);
-    tll_free(untranslated_sixels);
+    /* Free images we failed to "map" to the new grid */
+    tll_foreach(untranslated_images, it)
+        image_placement_destroy(&it->item);
+    tll_free(untranslated_images);
 
 #if defined(TIME_REFLOW) && TIME_REFLOW
     struct timespec stop;

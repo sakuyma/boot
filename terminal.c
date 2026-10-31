@@ -38,7 +38,8 @@
 #include "render.h"
 #include "selection.h"
 #include "shm.h"
-#include "sixel.h"
+#include "image.h"
+#include "kitty.h"
 #include "slave.h"
 #include "spawn.h"
 #include "url-mode.h"
@@ -858,7 +859,7 @@ term_set_fonts(struct terminal *term, struct fcft_font *fonts[static 4],
 
     LOG_INFO("cell width=%d, height=%d", term->cell_width, term->cell_height);
 
-    sixel_cell_size_changed(term);
+    image_placement_cell_size_changed(term);
 
     /* Optimization - some code paths (are forced to) call
      * render_resize() after this function */
@@ -1348,8 +1349,8 @@ term_init(const struct config *conf, struct fdm *fdm, struct reaper *reaper,
                 .fd = -1,
             },
         },
-        .normal = {.scroll_damage = tll_init(), .sixel_images = tll_init()},
-        .alt = {.scroll_damage = tll_init(), .sixel_images = tll_init()},
+        .normal = {.scroll_damage = tll_init(), .image_placements = tll_init()},
+        .alt = {.scroll_damage = tll_init(), .image_placements = tll_init()},
         .grid = &term->normal,
         .composed = NULL,
         .alt_scrolling = conf->mouse.alternate_scroll_mode,
@@ -1393,12 +1394,12 @@ term_init(const struct config *conf, struct fdm *fdm, struct reaper *reaper,
             .lower_fd = delay_lower_fd,
             .upper_fd = delay_upper_fd,
         },
-        .sixel = {
-            .scrolling = true,
-            .use_private_palette = true,
-            .palette_size = SIXEL_MAX_COLORS,
-            .max_width = SIXEL_MAX_WIDTH,
-            .max_height = SIXEL_MAX_HEIGHT,
+        .kitty_graphics = {
+            .images = tll_init(),
+            .next_id = 1,
+            .quota = 320u * 1024u * 1024u,
+            .max_width = 10000,
+            .max_height = 10000,
         },
         .shutdown = {
             .terminate_timeout_fd = -1,
@@ -1939,7 +1940,10 @@ term_destroy(struct terminal *term)
     for (size_t i = 0; i < ALEN(term->notification_icons); i++)
         notify_icon_free(&term->notification_icons[i]);
 
-    sixel_fini(term);
+    kitty_graphics_fini(term);
+    free(term->apc.data);
+    term->apc.data = NULL;
+    term->apc.size = term->apc.idx = 0;
 
     term_ime_reset(term);
 
@@ -2150,14 +2154,11 @@ term_reset(struct terminal *term, bool hard)
     term->meta.esc_prefix = true;
     term->meta.eight_bit = true;
 
-    tll_foreach(term->normal.sixel_images, it) {
-        sixel_destroy(&it->item);
-        tll_remove(term->normal.sixel_images, it);
-    }
-    tll_foreach(term->alt.sixel_images, it) {
-        sixel_destroy(&it->item);
-        tll_remove(term->alt.sixel_images, it);
-    }
+    kitty_graphics_clear_all(term);
+
+    free(term->apc.data);
+    term->apc.data = NULL;
+    term->apc.size = term->apc.idx = 0;
 
     notify_free(term, &term->kitty_notification);
     tll_foreach(term->active_notifications, it) {
@@ -2235,15 +2236,6 @@ term_reset(struct terminal *term, bool hard)
     term->render.last_cursor.row = NULL;
     term_damage_all(term);
 
-    term->sixel.scrolling = true;
-    term->sixel.cursor_right_of_graphics = false;
-    term->sixel.use_private_palette = true;
-    term->sixel.max_width = SIXEL_MAX_WIDTH;
-    term->sixel.max_height = SIXEL_MAX_HEIGHT;
-    term->sixel.palette_size = SIXEL_MAX_COLORS;
-    free(term->sixel.private_palette);
-    free(term->sixel.shared_palette);
-    term->sixel.private_palette = term->sixel.shared_palette = NULL;
 }
 
 static bool
@@ -2662,7 +2654,6 @@ term_erase(struct terminal *term, int start_row, int start_col,
     if (start_row == end_row) {
         struct row *row = grid_row(term->grid, start_row);
         erase_cell_range(term, row, start_col, end_col);
-        sixel_overwrite_by_row(term, start_row, start_col, end_col - start_col + 1);
         return;
     }
 
@@ -2670,15 +2661,11 @@ term_erase(struct terminal *term, int start_row, int start_col,
 
     erase_cell_range(
         term, grid_row(term->grid, start_row), start_col, term->cols - 1);
-    sixel_overwrite_by_row(term, start_row, start_col, term->cols - start_col);
 
     for (int r = start_row + 1; r < end_row; r++)
         erase_line(term, grid_row(term->grid, r));
-    sixel_overwrite_by_rectangle(
-        term, start_row + 1, 0, end_row - start_row, term->cols);
 
     erase_cell_range(term, grid_row(term->grid, end_row), 0, end_col);
-    sixel_overwrite_by_row(term, end_row, 0, end_col + 1);
 }
 
 void
@@ -2728,18 +2715,19 @@ term_erase_scrollback(struct terminal *term)
         }
     }
 
-    tll_foreach(term->grid->sixel_images, it) {
-        struct sixel *six = &it->item;
-        const int six_start = grid_row_abs_to_sb(grid, term->rows, six->pos.row);
-        const int six_end = grid_row_abs_to_sb(
-            grid, term->rows, six->pos.row + six->rows - 1);
+    tll_foreach(term->grid->image_placements, it) {
+        struct image_placement *img = &it->item;
+        const int img_start = grid_row_abs_to_sb(
+            grid, term->rows, img->pos.row);
+        const int img_end = grid_row_abs_to_sb(
+            grid, term->rows, img->pos.row + img->rows - 1);
 
-        if ((six_start <= rel_start && six_end >= rel_start) ||
-            (six_start <= rel_end && six_end >= rel_end) ||
-            (six_start >= rel_start && six_end <= rel_end))
+        if ((img_start <= rel_start && img_end >= rel_start) ||
+            (img_start <= rel_end && img_end >= rel_end) ||
+            (img_start >= rel_start && img_end <= rel_end))
         {
-            sixel_destroy(six);
-            tll_remove(term->grid->sixel_images, it);
+            image_placement_destroy(img);
+            tll_remove(term->grid->image_placements, it);
         }
     }
 
@@ -2863,31 +2851,31 @@ UNITTEST
     term.selection.kind = SELECTION_NONE;
 
     /*
-     * Test case 4 - sixel that touch the scrollback
+     * Test case 4 - image that touch the scrollback
      */
 
-    struct sixel six = {
+    struct image_placement six = {
         .rows = 5,
         .pos = {
             .row = 15,
         },
     };
-    tll_push_back(term.normal.sixel_images, six);
+    tll_push_back(term.normal.image_placements, six);
     populate_scrollback();
     term_erase_scrollback(&term);
-    xassert(tll_length(term.normal.sixel_images) == 0);
+    xassert(tll_length(term.normal.image_placements) == 0);
 
     /*
-     * Test case 5 - sixel that does *not* touch the scrollback
+     * Test case 5 - image that does *not* touch the scrollback
      */
     six.rows = 3;
-    tll_push_back(term.normal.sixel_images, six);
+    tll_push_back(term.normal.image_placements, six);
     populate_scrollback();
     term_erase_scrollback(&term);
-    xassert(tll_length(term.normal.sixel_images) == 1);
+    xassert(tll_length(term.normal.image_placements) == 1);
 
     /* Cleanup */
-    tll_free(term.normal.sixel_images);
+    tll_free(term.normal.image_placements);
     xassert(term.selection.auto_scroll.fd == -1);
     for (int i = 0; i < scrollback_rows; i++)
         grid_row_free(term.normal.rows[i]);
@@ -3085,7 +3073,7 @@ term_scroll_partial(struct terminal *term, struct scroll_region region, int rows
             selection_scroll_up(term, rows);
     }
 
-    sixel_scroll_up(term, rows);
+    image_placement_scroll_up(term, rows);
 
     /* How many lines from the scrollback start is the current viewport? */
     int view_sb_start_distance = grid_row_abs_to_sb(
@@ -3171,7 +3159,7 @@ term_scroll_reverse_partial(struct terminal *term,
             term->render.last_cursor.row = NULL;
     }
 
-    sixel_scroll_down(term, rows);
+    image_placement_scroll_down(term, rows);
 
     const bool view_follows = term->grid->view == term->grid->offset;
     term->grid->offset -= rows;
@@ -3944,7 +3932,7 @@ print_spacer(struct terminal *term, int col, int remaining)
  * Does NOT:
  *  - update the cursor
  *  - linewrap
- *  - erase sixels
+ *  - erase images
  *
  * Limitations:
  *   - double width characters not supported
@@ -4045,7 +4033,6 @@ term_print(struct terminal *term, char32_t wc, int width, bool insert_mode_disab
         col = 0;
     }
 
-    sixel_overwrite_at_cursor(term, width);
 
     /* *Must* get current cell *after* linewrap+insert */
     struct row *row = grid->cur_row;
@@ -4115,7 +4102,6 @@ ascii_printer_fast(struct terminal *term, char32_t wc)
 
     xassert(term->charsets.set[term->charsets.selected] == CHARSET_ASCII);
     xassert(!term->insert_mode);
-    xassert(tll_length(grid->sixel_images) == 0);
 
     print_linewrap(term);
 

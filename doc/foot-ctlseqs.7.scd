@@ -325,9 +325,6 @@ that corresponds to one of the following modes:
 |  1049
 :  xterm
 :  Equivalent to 1048 and 1047 combined
-|  1070
-:  xterm
-:  Use private color registers for each sixel
 |  2004
 :  xterm
 :  Wrap pasted text with start/end delimiters (bracketed paste mode)
@@ -346,12 +343,6 @@ that corresponds to one of the following modes:
    the current visibility as *CSI ? 999 ; 1|2 n*, where *1* means potentially
    visible and *2* means not visible. Further reports are sent whenever the
    visibility changes.
-|  2048
-:  TODO
-:  In-band window resize notifications
-|  8452
-:  xterm
-:  Position cursor to the right of sixels, instead of on the next line
 |  737769
 :  foot
 :  Input Method Editor (IME) mode
@@ -429,7 +420,7 @@ manipulation sequences. The generic format is:
 :  DA
 :  VT100
 :  Send primary device attributes. Foot responds with "I'm a VT220 with
-   sixel and ANSI color support".
+   ANSI color support".
 |  \\E[ _Ps_ A
 :  CUU
 :  VT100
@@ -613,10 +604,6 @@ manipulation sequences. The generic format is:
 :  REP
 :  ECMA-48
 :  Repeat the preceding printable character _Ps_ times.
-|  \\E[ ? _Pi_ ; _Pa_ ; _Pv_ S
-:  XTSMGRAPHICS
-:  xterm
-:  Set or request sixel attributes.
 |  \\E[ > _Ps_ q
 :  XTVERSION
 :  xterm
@@ -807,8 +794,6 @@ and are terminated by *\\E\\* (ST).
 
 [[ *Sequence*
 :< *Description*
-|  \\EP q <sixel data> \\E\\ 
-:  Emit a sixel image at the current cursor position
 |  \\EP $ q <query> \\E\\ 
 :  Request selection or setting (DECRQSS). Implemented queries:
    DECSTBM, SGR and DECSCUSR.
@@ -818,6 +803,42 @@ and are terminated by *\\E\\* (ST).
    recommended to use private mode 2026 (see above) instead.
 |  \\EP + q <hex encoded capability name> \\E\\ 
 :  Query builtin terminfo database (XTGETTCAP)
+
+
+# APC
+
+All _APC_ sequences begin with *\\E_* and are terminated by *\\E\\*
+(ST).
+
+boot implements the Kitty graphics protocol. The general form is:
+
+*\\E_G* _control_ *;* _payload_ *\\E\\*
+
+where _control_ is a comma-separated list of *key=value* pairs, and
+_payload_ is the image data.
+
+[[ *Action*
+:< *Description*
+|  *a=t*
+:  Transmit an image, optionally displaying it.
+|  *a=T*
+:  Transmit and display an image.
+|  *a=q*
+:  Query image data without storing it.
+|  *a=p*
+:  Display a previously transmitted image.
+|  *a=d*
+:  Delete images and/or placements.
+
+Supported image formats are RGB (*f=24*), RGBA (*f=32*), and, when built
+with libpng, PNG (*f=100*). Image data may be transferred directly
+(*t=d*, base64), from a regular file (*t=f*), from a temporary file
+(*t=t*), or through shared memory (*t=s*). zlib compression (*o=z*) and
+chunked transfers (*m=1*) are supported.
+
+The placement options *x*, *y*, *w*, *h*, *X*, *Y*, *c*, *r*, *z*, and
+*C*, along with image identifiers *i*, *I*, and *p*, are supported.
+Unicode placeholders (*U=1*) and animations are not implemented.
 
 
 # FOOTNOTE

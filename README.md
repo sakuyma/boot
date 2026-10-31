@@ -1,10 +1,12 @@
-# ![Logo: a terminal with a foot shaped prompt](icons/hicolor/48x48/apps/foot.png) foot
+# ![Logo: a terminal with a foot shaped prompt](icons/hicolor/48x48/apps/foot.png) boot
 
-The fast, lightweight and minimalistic Wayland terminal emulator.
+**boot** is a fork of [foot](https://codeberg.org/dnkl/foot), the fast,
+lightweight and minimalistic Wayland terminal emulator. It replaces
+foot's sixel image support with the
+[Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
 
-[![CI status](https://ci.codeberg.org/api/badges/dnkl/foot/status.svg)](https://ci.codeberg.org/dnkl/foot)
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/foot.svg?columns=4)](https://repology.org/project/foot/versions)
+The command line and configuration file names remain `foot` and
+`foot.ini` for compatibility.
 
 
 ## Index
@@ -65,9 +67,7 @@ The fast, lightweight and minimalistic Wayland terminal emulator.
 * True Color (24bpp)
 * [Styled and colored underlines](https://sw.kovidgoyal.net/kitty/underlines/)
 * [Synchronized Updates](https://gitlab.freedesktop.org/terminal-wg/specifications/-/merge_requests/2) support
-* [Sixel image support](https://en.wikipedia.org/wiki/Sixel)
-
-  ![tux-with-foot](doc/sixel-tux-foot.png "Sixel screenshot")
+* [Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) support
 
 
 # Installing

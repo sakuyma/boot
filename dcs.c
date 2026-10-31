@@ -5,7 +5,6 @@
 #define LOG_ENABLE_DBG 0
 #include "log.h"
 #include "foot-terminfo.h"
-#include "sixel.h"
 #include "util.h"
 #include "vt.h"
 #include "xmalloc.h"
@@ -457,18 +456,6 @@ dcs_hook(struct terminal *term, uint8_t final)
     switch (term->vt.private) {
     case 0:
         switch (final) {
-        case 'q': {
-            if (!term->conf->tweak.sixel) {
-                break;
-            }
-            int p1 = vt_param_get(term, 0, 0);
-            int p2 = vt_param_get(term, 1, 0);
-            int p3 = vt_param_get(term, 2, 0);
-
-            term->vt.dcs.put_handler = sixel_init(term, p1, p2, p3);
-            term->vt.dcs.unhook_handler = &sixel_unhook;
-            break;
-        }
         }
         break;
 

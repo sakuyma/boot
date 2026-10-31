@@ -73,6 +73,13 @@
 
 ## Unreleased
 ### Added
+
+* Support for the [Kitty graphics
+  protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/). The
+  parser lives in `kitty.c`, while image placement lifetime management
+  lives in `image.c`.
+* New `[tweak].kitty-graphics` option, enabled by default.
+
 ### Changed
 
 * Cells with a non-default background colors, but otherwise empty, are
@@ -84,6 +91,11 @@
 
 ### Deprecated
 ### Removed
+
+* Sixel image support, including the `colors.sixel0`..`colors.sixel15`
+  options, `[tweak].sixel`, and the associated DA1/XTSMGRAPHICS
+  responses. Use the Kitty graphics protocol instead.
+
 ### Fixed
 
 * Use-after-free during shutdown when footclient and the client

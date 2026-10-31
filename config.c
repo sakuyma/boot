@@ -86,26 +86,6 @@ static const uint32_t default_color_table[256] = {
     0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee
 };
 
-/* VT330/VT340 Programmer Reference Manual  - Table 2-3 VT340 Default Color Map */
-static const uint32_t default_sixel_colors[16] = {
-    0xff000000,
-    0xff3333cc,
-    0xffcc2121,
-    0xff33cc33,
-    0xffcc33cc,
-    0xff33cccc,
-    0xffcccc33,
-    0xff878787,
-    0xff424242,
-    0xff545499,
-    0xff994242,
-    0xff549954,
-    0xff995499,
-    0xff549999,
-    0xff999954,
-    0xffcccccc,
-};
-
 static const char *const default_url_regex_string =
     "("
         "("
@@ -1466,14 +1446,6 @@ parse_color_theme(struct context *ctx, struct color_theme *theme)
 
         theme->use_custom.dim |= 1 << last_digit;
         return true;
-    }
-
-    else if (str_has_prefix(key, "sixel") &&
-             ((key_len == 6 && last_digit < 10) ||
-              (key_len == 7 && key[5] == '1' && last_digit < 6)))
-    {
-        size_t idx = key_len == 6 ? last_digit : 10 + last_digit;
-        return value_to_color(ctx, &theme->sixel[idx], false);
     }
 
     else if (streq(key, "flash")) color = &theme->flash;
@@ -2971,8 +2943,8 @@ parse_section_tweak(struct context *ctx)
     else if (streq(key, "font-monospace-warn"))
         return value_to_bool(ctx, &conf->tweak.font_monospace_warn);
 
-    else if (streq(key, "sixel"))
-        return value_to_bool(ctx, &conf->tweak.sixel);
+    else if (streq(key, "kitty-graphics"))
+        return value_to_bool(ctx, &conf->tweak.kitty_graphics);
 
     else if (streq(key, "dim-amount"))
         return value_to_float(ctx, &conf->dim.amount);
@@ -3657,7 +3629,7 @@ config_load(struct config *conf, const char *conf_path,
             .box_drawing_base_thickness = 0.04,
             .box_drawing_solid_shades = true,
             .font_monospace_warn = true,
-            .sixel = true,
+            .kitty_graphics = true,
             .surface_bit_depth = SHM_BITS_AUTO,
             .min_stride_alignment = 256,
             .preapply_damage = true,
@@ -3678,7 +3650,6 @@ config_load(struct config *conf, const char *conf_path,
     };
 
     memcpy(conf->colors_dark.table, default_color_table, sizeof(default_color_table));
-    memcpy(conf->colors_dark.sixel, default_sixel_colors, sizeof(default_sixel_colors));
     memcpy(&conf->colors_light, &conf->colors_dark, sizeof(conf->colors_dark));
     conf->colors_light.dim_blend_towards = DIM_BLEND_TOWARDS_WHITE;
 

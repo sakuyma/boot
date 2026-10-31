@@ -18,7 +18,8 @@
 #include "debug.h"
 #include "grid.h"
 #include "selection.h"
-#include "sixel.h"
+#include "image.h"
+#include "kitty.h"
 #include "util.h"
 #include "version.h"
 #include "vt.h"
@@ -387,10 +388,6 @@ decset_decrst(struct terminal *term, unsigned param, bool enable)
             LOG_WARN("unimplemented: DECBKM");
         break;
 
-    case 80:
-        term->sixel.scrolling = !enable;
-        break;
-
     case 1000:
         if (enable)
             term->mouse_tracking = MOUSE_CLICK;
@@ -529,23 +526,12 @@ decset_decrst(struct terminal *term, unsigned param, bool enable)
             if (param == 1049)
                 term_restore_cursor(term, &term->grid->saved_cursor);
 
-            /* Delete all sixel images on the alt screen */
-            tll_foreach(term->alt.sixel_images, it) {
-                sixel_destroy(&it->item);
-                tll_remove(term->alt.sixel_images, it);
-            }
+            kitty_graphics_clear_alt(term);
 
             tll_free(term->alt.scroll_damage);
             term_damage_view(term);
         }
 
-        term->bits_affecting_ascii_printer.sixels =
-            tll_length(term->grid->sixel_images) > 0;
-        term_update_ascii_printer(term);
-        break;
-
-    case 1070:
-        term->sixel.use_private_palette = enable;
         break;
 
     case 2004:
@@ -580,10 +566,6 @@ decset_decrst(struct terminal *term, unsigned param, bool enable)
             term_enable_size_notifications(term);
         else
             term_disable_size_notifications(term);
-        break;
-
-    case 8452:
-        term->sixel.cursor_right_of_graphics = enable;
         break;
 
     case 737769:
@@ -645,7 +627,6 @@ decrqm(const struct terminal *term, unsigned param)
     case 45: return decrpm(term->reverse_wrap);
     case 66: return decrpm(term->keypad_keys_mode == KEYPAD_APPLICATION);
     case 67: return DECRPM_PERMANENTLY_RESET; /* https://vt100.net/docs/vt510-rm/DECBKM */
-    case 80: return decrpm(!term->sixel.scrolling);
     case 1000: return decrpm(term->mouse_tracking == MOUSE_CLICK);
     case 1001: return DECRPM_PERMANENTLY_RESET;
     case 1002: return decrpm(term->mouse_tracking == MOUSE_DRAG);
@@ -663,7 +644,6 @@ decrqm(const struct terminal *term, unsigned param)
     case 47:   /* FALLTHROUGH */
     case 1047: /* FALLTHROUGH */
     case 1049: return decrpm(term->grid == &term->alt);
-    case 1070: return decrpm(term->sixel.use_private_palette);
     case 2004: return decrpm(term->bracketed_paste);
     case 2026: return decrpm(term->render.app_sync_updates.enabled);
     case 2027: return term->conf->tweak.grapheme_width_method != GRAPHEME_WIDTH_DOUBLE
@@ -672,7 +652,6 @@ decrqm(const struct terminal *term, unsigned param)
     case 2031: return decrpm(term->report_theme_changes);
     case 2033: return decrpm(term->visibility_reports);
     case 2048: return decrpm(term->size_notifications);
-    case 8452: return decrpm(term->sixel.cursor_right_of_graphics);
     case 737769: return decrpm(term_ime_is_enabled(term));
     }
 
@@ -694,7 +673,6 @@ xtsave(struct terminal *term, unsigned param)
     case 47: term->xtsave.alt_screen = term->grid == &term->alt; break;
     case 66: term->xtsave.application_keypad_keys = term->keypad_keys_mode == KEYPAD_APPLICATION; break;
     case 67: break;
-    case 80: term->xtsave.sixel_display_mode = !term->sixel.scrolling; break;
     case 1000: term->xtsave.mouse_click = term->mouse_tracking == MOUSE_CLICK; break;
     case 1001: break;
     case 1002: term->xtsave.mouse_drag = term->mouse_tracking == MOUSE_DRAG; break;
@@ -712,14 +690,12 @@ xtsave(struct terminal *term, unsigned param)
     case 1047: term->xtsave.alt_screen = term->grid == &term->alt; break;
     case 1048: term_save_cursor(term); break;
     case 1049: term->xtsave.alt_screen = term->grid == &term->alt; break;
-    case 1070: term->xtsave.sixel_private_palette = term->sixel.use_private_palette; break;
     case 2004: term->xtsave.bracketed_paste = term->bracketed_paste; break;
     case 2026: term->xtsave.app_sync_updates = term->render.app_sync_updates.enabled; break;
     case 2027: term->xtsave.grapheme_shaping = term->grapheme_shaping; break;
     case 2031: term->xtsave.report_theme_changes = term->report_theme_changes; break;
     case 2033: term->xtsave.visibility_reports = term->visibility_reports; break;
     case 2048: term->xtsave.size_notifications = term->size_notifications; break;
-    case 8452: term->xtsave.sixel_cursor_right_of_graphics = term->sixel.cursor_right_of_graphics; break;
     case 737769: term->xtsave.ime = term_ime_is_enabled(term); break;
     }
 }
@@ -740,7 +716,6 @@ xtrestore(struct terminal *term, unsigned param)
     case 47: enable = term->xtsave.alt_screen; break;
     case 66: enable = term->xtsave.application_keypad_keys; break;
     case 67: return;
-    case 80: enable = term->xtsave.sixel_display_mode; break;
     case 1000: enable = term->xtsave.mouse_click; break;
     case 1001: return;
     case 1002: enable = term->xtsave.mouse_drag; break;
@@ -758,14 +733,12 @@ xtrestore(struct terminal *term, unsigned param)
     case 1047: enable = term->xtsave.alt_screen; break;
     case 1048: enable = true; break;
     case 1049: enable = term->xtsave.alt_screen; break;
-    case 1070: enable = term->xtsave.sixel_private_palette; break;
     case 2004: enable = term->xtsave.bracketed_paste; break;
     case 2026: enable = term->xtsave.app_sync_updates; break;
     case 2027: enable = term->xtsave.grapheme_shaping; break;
     case 2031: enable = term->xtsave.report_theme_changes; break;
     case 2033: enable = term->xtsave.visibility_reports; break;
     case 2048: enable = term->xtsave.size_notifications; break;
-    case 8452: enable = term->xtsave.sixel_cursor_right_of_graphics; break;
     case 737769: enable = term->xtsave.ime; break;
 
     default: return;
@@ -850,7 +823,6 @@ csi_dispatch(struct terminal *term, uint8_t final)
              *  - 1    132 columns
              *  - 2    Printer.
              *  - 3    ReGIS graphics.
-             *  - 4    Sixel graphics.
              *  - 6    Selective erase.
              *  - 8    User-defined keys.
              *  - 9    National Replacement Character sets.
@@ -865,8 +837,7 @@ csi_dispatch(struct terminal *term, uint8_t final)
              *  - 52   Clipboard access
              *
              * Note: we report ourselves as a VT220, mainly to be able
-             * to pass parameters, to indicate we support sixel, and
-             * ANSI colors.
+             * to pass parameters, and to indicate ANSI color support.
              *
              * The VT level must be synchronized with the secondary DA
              * response.
@@ -876,8 +847,7 @@ csi_dispatch(struct terminal *term, uint8_t final)
             char reply[32];
 
             int len = snprintf(
-                reply, sizeof(reply), "\033[?62%s;22;28%sc",
-                term->conf->tweak.sixel ? ";4" : "",
+                reply, sizeof(reply), "\033[?62;22;28%sc",
                 (term->conf->security.osc52 == OSC52_ENABLED ||
                  term->conf->security.osc52 == OSC52_COPY_ENABLED ? ";52" : ""));
 
@@ -998,6 +968,9 @@ csi_dispatch(struct terminal *term, uint8_t final)
             case 2:
                 /* Erase entire screen */
                 term_erase(term, 0, 0, term->rows - 1, term->cols - 1);
+                image_placement_erase_screen_region(
+                    term, term->grid, 0, 0,
+                    term->rows - 1, term->cols - 1);
                 term->grid->cursor.lcf = false;
                 break;
 
@@ -1505,44 +1478,6 @@ csi_dispatch(struct terminal *term, uint8_t final)
             for (size_t i = 0; i < term->vt.params.idx; i++)
                 xtrestore(term, term->vt.params.v[i].value);
             break;
-
-        case 'S': {
-            if (!term->conf->tweak.sixel) {
-                UNHANDLED();
-                break;
-            }
-
-            unsigned target = vt_param_get(term, 0, 0);
-            unsigned operation = vt_param_get(term, 1, 0);
-
-            switch (target) {
-            case 1:
-                switch (operation) {
-                case 1: sixel_colors_report_current(term); break;
-                case 2: sixel_colors_reset(term); break;
-                case 3: sixel_colors_set(term, vt_param_get(term, 2, 0)); break;
-                case 4: sixel_colors_report_max(term); break;
-                default: UNHANDLED(); break;
-                }
-                break;
-
-            case 2:
-                switch (operation) {
-                case 1: sixel_geometry_report_current(term); break;
-                case 2: sixel_geometry_reset(term); break;
-                case 3: sixel_geometry_set(term, vt_param_get(term, 2, 0), vt_param_get(term, 3, 0)); break;
-                case 4: sixel_geometry_report_max(term); break;
-                default: UNHANDLED(); break;
-                }
-                break;
-
-            default:
-                UNHANDLED();
-                break;
-            }
-
-            break;
-        }
 
         case 'm': {
             int resource = vt_param_get(term, 0, 0);
@@ -2058,9 +1993,6 @@ csi_dispatch(struct terminal *term, uint8_t final)
             const size_t cell_count = min(src_right - src_left,
                                           dst_right - dst_left) + 1;
 
-            sixel_overwrite_by_rectangle(
-                term, dst_top, dst_left, row_count, cell_count);
-
             /*
              * Copy source area
              *
@@ -2116,9 +2048,6 @@ csi_dispatch(struct terminal *term, uint8_t final)
             /* Erase the entire region at once (MUCH cheaper than
              * doing it row by row, or even character by
              * character). */
-            sixel_overwrite_by_rectangle(
-                term, top, left, bottom - top + 1, right - left + 1);
-
             for (int r = top; r <= bottom; r++)
                 term_fill(term, r, left, c, right - left + 1, true);
 
@@ -2134,13 +2063,10 @@ csi_dispatch(struct terminal *term, uint8_t final)
             }
 
             /*
-             * Note: term_erase() _also_ erases sixels, but since
-             * we’re forced to erase one row at a time, erasing the
-             * entire sixel here is more efficient.
+             * Note: term_erase() does not erase image placements,
+             * since kitty graphics images live independently of the
+             * text grid.
              */
-            sixel_overwrite_by_rectangle(
-                term, top, left, bottom - top + 1, right - left + 1);
-
             for (int r = top; r <= bottom; r++)
                 term_erase(term, r, left, r, right);
             break;

@@ -159,10 +159,10 @@ struct row {
     } shell_integration;
 };
 
-struct sixel {
+struct image_placement {
     /*
      * These three members reflect the "current", maybe scaled version
-     * of the image.
+     * of the image placement.
      *
      * The values will either be NULL/-1/-1, or match either the
      * values in "original", or "scaled".
@@ -179,8 +179,19 @@ struct sixel {
     struct coord pos;
     bool opaque;
 
+    /* Pixel offsets within the first cell */
+    int offset_x;
+    int offset_y;
+
+    /* Kitty graphics metadata */
+    uint32_t image_id;
+    uint32_t image_number;
+    uint32_t placement_id;
+    int32_t z;
+
     /*
-     * We store the cell dimensions of the time the sixel was emitted.
+     * We store the cell dimensions of the time the placement was
+     * created.
      *
      * If the font size is changed, we rescale the image accordingly,
      * to ensure it stays within its cell boundaries. 'scaled' is a
@@ -202,6 +213,64 @@ struct sixel {
         int width;
         int height;
     } scaled;
+};
+
+/* A decoded kitty graphics image. Images are reference counted from
+ * the master store; each placement owns its own cropped/scaled copy. */
+struct image {
+    uint32_t id;
+    uint32_t number;
+    int width;
+    int height;
+    uint32_t *data;
+    pixman_image_t *pix;
+    bool opaque;
+    size_t bytes;
+};
+
+struct kitty_cmd {
+    char action;
+    int quiet;
+    int format;
+    char medium;
+    int width;
+    int height;
+    size_t data_size;
+    size_t data_offset;
+    uint32_t id;
+    uint32_t number;
+    uint32_t placement_id;
+    char compression;
+    int more;
+    int src_x, src_y, src_w, src_h;
+    int off_x, off_y;
+    int cols, rows;
+    int cursor_policy;
+    int32_t z;
+    char delete;
+    bool unicode_placeholder;
+};
+
+struct kitty_upload {
+    bool active;
+    bool overflow;
+    bool binary;          /* payload chunks have been base64 decoded */
+    uint8_t *data;
+    size_t size;
+    size_t alloc;
+
+    /* Control data from the first chunk */
+    struct kitty_cmd cmd;
+};
+
+struct kitty_graphics {
+    tll(struct image) images;
+    uint32_t next_id;
+    size_t total_bytes;
+    size_t quota;
+    unsigned max_width;
+    unsigned max_height;
+    struct kitty_upload upload;
 };
 
 enum kitty_kbd_flags {
@@ -239,7 +308,7 @@ struct grid {
     struct row *cur_row;
 
     tll(struct damage) scroll_damage;
-    tll(struct sixel) sixel_images;
+    tll(struct image_placement) image_placements;
 
     struct {
         enum kitty_kbd_flags flags[8];
@@ -407,7 +476,6 @@ struct terminal {
     void (*ascii_printer)(struct terminal *term, char32_t c);
     union {
         struct {
-            bool sixels:1;
             bool osc8:1;
             bool underline_style:1;
             bool underline_color:1;
@@ -546,9 +614,6 @@ struct terminal {
 
         bool size_notifications:1;
 
-        bool sixel_display_mode:1;
-        bool sixel_private_palette:1;
-        bool sixel_cursor_right_of_graphics:1;
     } xtsave;
 
     bool window_title_has_been_set;
@@ -740,58 +805,13 @@ struct terminal {
     } interactive_resizing;
 
     struct {
-        enum {
-            SIXEL_DECSIXEL,  /* DECSIXEL body part ", $, -, ? ... ~ */
-            SIXEL_DECGRA,    /* DECGRA Set Raster Attributes " Pan; Pad; Ph; Pv */
-            SIXEL_DECGRI,    /* DECGRI Graphics Repeat Introducer ! Pn Ch */
-            SIXEL_DECGCI,    /* DECGCI Graphics Color Introducer # Pc; Pu; Px; Py; Pz */
-        } state;
+        uint8_t *data;
+        size_t size;
+        size_t idx;
+        bool overflow;
+    } apc;
 
-        struct coord pos;    /* Current sixel coordinate */
-        int color_idx;       /* Current palette index */
-        uint32_t *private_palette;   /* Private palette, used when private mode 1070 is enabled */
-        uint32_t *shared_palette;    /* Shared palette, used when private mode 1070 is disabled */
-        uint32_t *palette;   /* Points to either private_palette or shared_palette */
-        uint32_t color;
-
-        struct {
-            uint32_t *data;  /* Raw image data, in ARGB */
-            uint32_t *p;     /* Pointer into data, for current position */
-            int width;       /* Image width, in pixels */
-            int height;      /* Image height, in pixels */
-            int alloc_height;
-            unsigned int bottom_pixel;
-        } image;
-
-        /*
-         * Pan is the vertical shape of a pixel
-         * Pad is the horizontal shape of a pixel
-         *
-         * pan/pad is the sixel's aspect ratio
-         */
-        int pan;
-        int pad;
-
-        bool scrolling:1;                 /* Private mode 80 */
-        bool use_private_palette:1;       /* Private mode 1070 */
-        bool cursor_right_of_graphics:1;  /* Private mode 8452 */
-
-        unsigned params[5];  /* Collected parameters, for RASTER, COLOR_SPEC */
-        unsigned param;      /* Currently collecting parameter, for RASTER, COLOR_SPEC and REPEAT */
-        unsigned param_idx;  /* Parameters seen */
-        unsigned repeat_count;
-
-        bool transparent_bg;
-
-        bool linear_blending;
-        bool use_10bit;
-        pixman_format_code_t pixman_fmt;
-
-        /* Application configurable */
-        unsigned palette_size;  /* Number of colors in palette */
-        unsigned max_width;     /* Maximum image width, in pixels */
-        unsigned max_height;    /* Maximum image height, in pixels */
-    } sixel;
+    struct kitty_graphics kitty_graphics;
 
     struct {
         url_list_t list;

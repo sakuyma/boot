@@ -40,7 +40,7 @@
 #include "search.h"
 #include "selection.h"
 #include "shm.h"
-#include "sixel.h"
+#include "image.h"
 #include "srgb.h"
 #include "url-mode.h"
 #include "util.h"
@@ -1506,40 +1506,53 @@ grid_render_scroll_reverse(struct terminal *term, struct buffer *buf,
 }
 
 static void
-render_sixel_chunk(struct terminal *term, pixman_image_t *pix,
-                   pixman_region32_t *damage, const struct sixel *sixel,
+render_image_chunk(struct terminal *term, pixman_image_t *pix,
+                   pixman_region32_t *damage,
+                   const struct image_placement *img,
                    int term_start_row, int img_start_row, int count)
 {
-    /* Translate row/column to x/y pixel values */
-    const int x = term->margins.left + sixel->pos.col * term->cell_width;
-    const int y = term->margins.top + term_start_row * term->cell_height;
+    const int cell_w = term->cell_width;
+    const int cell_h = term->cell_height;
+    const int left = term->margins.left;
+    const int top = term->margins.top;
+    const int right = term->width - term->margins.right;
+    const int bottom = term->height - term->margins.bottom;
 
-    /* Width/height, in pixels - and don't touch the window margins */
-    const int width = max(
-        0,
-        min(sixel->width,
-            term->width - x - term->margins.right));
-    const int height = max(
-        0,
-        min(
-            min(count * term->cell_height,                          /* 'count' number of rows */
-                sixel->height - img_start_row * term->cell_height), /* What remains of the sixel */
-            term->height - y - term->margins.bottom));
+    int x = left + img->pos.col * cell_w + img->offset_x;
+    int y = top + term_start_row * cell_h + img->offset_y;
+    int src_x = 0;
+    int src_y = img_start_row * cell_h;
 
-    /* Verify we're not stepping outside the grid */
-    xassert(x >= term->margins.left);
-    xassert(y >= term->margins.top);
-    xassert(width == 0 || x + width <= term->width - term->margins.right);
-    xassert(height == 0 || y + height <= term->height - term->margins.bottom);
+    int width = min(img->width, right - x);
+    int height = min(
+        min(count * cell_h, img->height - src_y),
+        bottom - y);
 
-    //LOG_DBG("sixel chunk: %dx%d %dx%d", x, y, width, height);
+    /* Clip against the margins */
+    if (x < left) {
+        int delta = left - x;
+        src_x += delta;
+        width -= delta;
+        x = left;
+    }
+    if (y < top) {
+        int delta = top - y;
+        src_y += delta;
+        height -= delta;
+        y = top;
+    }
+
+    if (width <= 0 || height <= 0)
+        return;
+
+    xassert(x >= left);
+    xassert(y >= top);
+    xassert(x + width <= right);
+    xassert(y + height <= bottom);
 
     pixman_image_composite32(
-        sixel->opaque ? PIXMAN_OP_SRC : PIXMAN_OP_OVER,
-        sixel->pix,
-        NULL,
-        pix,
-        0, img_start_row * term->cell_height,
+        PIXMAN_OP_OVER, img->pix, NULL, pix,
+        src_x, src_y,
         0, 0,
         x, y,
         width, height);
@@ -1549,144 +1562,73 @@ render_sixel_chunk(struct terminal *term, pixman_image_t *pix,
 }
 
 static void
-render_sixel(struct terminal *term, pixman_image_t *pix,
-             pixman_region32_t *damage, const struct coord *cursor,
-             const struct sixel *sixel)
+render_image(struct terminal *term, pixman_image_t *pix,
+             pixman_region32_t *damage, struct image_placement *img,
+             const bool *dirty_rows)
 {
-    xassert(sixel->pix != NULL);
-    xassert(sixel->width >= 0);
-    xassert(sixel->height >= 0);
+    if (img->pix == NULL)
+        image_placement_sync_cache(term, img);
 
-    const int view_end = (term->grid->view + term->rows - 1) & (term->grid->num_rows - 1);
-    const bool last_row_needs_erase = sixel->height % term->cell_height != 0;
-    const bool last_col_needs_erase = sixel->width % term->cell_width != 0;
+    xassert(img->pix != NULL);
+    xassert(img->width >= 0);
+    xassert(img->height >= 0);
 
-    int chunk_img_start = -1;  /* Image-relative start row of chunk */
-    int chunk_term_start = -1; /* Viewport relative start row of chunk */
-    int chunk_row_count = 0;   /* Number of rows to emit */
+    const int mask = term->grid->num_rows - 1;
+    int chunk_img_start = -1;
+    int chunk_term_start = -1;
+    int chunk_row_count = 0;
+    int last_term_row = -1;
 
-#define maybe_emit_sixel_chunk_then_reset()                             \
-    if (chunk_row_count != 0) {                                         \
-        render_sixel_chunk(                                             \
-            term, pix, damage, sixel,                                   \
-            chunk_term_start, chunk_img_start, chunk_row_count);        \
-        chunk_term_start = chunk_img_start = -1;                        \
-        chunk_row_count = 0;                                            \
+#define maybe_emit_image_chunk_then_reset()                             \
+    if (chunk_row_count != 0) {                                        \
+        render_image_chunk(                                            \
+            term, pix, damage, img,                                    \
+            chunk_term_start, chunk_img_start, chunk_row_count);       \
+        chunk_term_start = chunk_img_start = -1;                       \
+        chunk_row_count = 0;                                           \
     }
 
-    /*
-     * Iterate all sixel rows:
-     *
-     *  - ignore rows that aren't visible on-screen
-     *  - ignore rows that aren't dirty (they have already been rendered)
-     *  - chunk consecutive dirty rows into a 'chunk'
-     *  - emit (render) chunk as soon as a row isn't visible, or is clean
-     *  - emit final chunk after we've iterated all rows
-     *
-     * The purpose of this is to reduce the amount of pixels that
-     * needs to be composited and marked as damaged for the
-     * compositor.
-     *
-     * Since we do CPU based composition, rendering is a slow and
-     * heavy task for foot, and thus it is important to not re-render
-     * things unnecessarily.
-     */
+    for (int i = 0; i < img->rows; i++) {
+        const int abs_row = (img->pos.row + i) & mask;
+        const int term_row =
+            (abs_row - term->grid->view + term->grid->num_rows) & mask;
 
-    for (int _abs_row_no = sixel->pos.row;
-         _abs_row_no < sixel->pos.row + sixel->rows;
-         _abs_row_no++)
-    {
-        const int abs_row_no = _abs_row_no & (term->grid->num_rows - 1);
-        const int term_row_no =
-            (abs_row_no - term->grid->view + term->grid->num_rows) &
-            (term->grid->num_rows - 1);
+        const struct row *row = term->grid->rows[abs_row];
+        const bool dirty =
+            row != NULL && term_row < term->rows &&
+            (dirty_rows != NULL ? dirty_rows[term_row] : row->dirty);
 
-        /* Check if row is in the visible viewport */
-        if (view_end >= term->grid->view) {
-            /* Not wrapped */
-            if (!(abs_row_no >= term->grid->view && abs_row_no <= view_end)) {
-                /* Not visible */
-                maybe_emit_sixel_chunk_then_reset();
-                continue;
-            }
-        } else {
-            /* Wrapped */
-            if (!(abs_row_no >= term->grid->view || abs_row_no <= view_end)) {
-                /* Not visible */
-                maybe_emit_sixel_chunk_then_reset();
-                continue;
-            }
+        if (!dirty ||
+            (chunk_row_count > 0 && term_row != last_term_row + 1))
+        {
+            maybe_emit_image_chunk_then_reset();
         }
 
-        /* Is the row dirty? */
-        struct row *row = term->grid->rows[abs_row_no];
-        xassert(row != NULL);  /* Should be visible */
-
-        if (!row->dirty) {
-            maybe_emit_sixel_chunk_then_reset();
+        if (!dirty) {
+            last_term_row = -1;
             continue;
         }
 
-        int cursor_col = cursor->row == term_row_no ? cursor->col : -1;
-
-        /*
-         * If image contains transparent parts, render all (dirty)
-         * cells beneath it.
-         *
-         * If image is opaque, loop cells and set their 'clean' bit,
-         * to prevent the grid rendered from overwriting the sixel
-         *
-         * If the last sixel row only partially covers the cell row,
-         * 'erase' the cell by rendering them.
-         *
-         * In all cases, do *not* clear the 'dirty' bit on the row, to
-         * ensure the regular renderer includes them in the damage
-         * rect.
-         */
-        if (!sixel->opaque) {
-            /* TODO: multithreading */
-            render_row(term, pix, damage, row, term_row_no, cursor_col);
-        } else {
-            for (int col = sixel->pos.col;
-                 col < min(sixel->pos.col + sixel->cols, term->cols);
-                 col++)
-            {
-                struct cell *cell = &row->cells[col];
-
-                if (!cell->attrs.clean) {
-                    bool last_row = abs_row_no == sixel->pos.row + sixel->rows - 1;
-                    bool last_col = col == sixel->pos.col + sixel->cols - 1;
-
-                    if ((last_row_needs_erase && last_row) ||
-                        (last_col_needs_erase && last_col))
-                    {
-                        render_cell(term, pix, damage, row, term_row_no, col, cursor_col == col);
-                    } else {
-                        cell->attrs.clean = 1;
-                        cell->attrs.confined = 1;
-                    }
-                }
-            }
-        }
-
         if (chunk_term_start == -1) {
-            xassert(chunk_img_start == -1);
-            chunk_term_start = term_row_no;
-            chunk_img_start = _abs_row_no - sixel->pos.row;
+            chunk_term_start = term_row;
+            chunk_img_start = i;
             chunk_row_count = 1;
         } else
             chunk_row_count++;
+
+        last_term_row = term_row;
     }
 
-    maybe_emit_sixel_chunk_then_reset();
-#undef maybe_emit_sixel_chunk_then_reset
+    maybe_emit_image_chunk_then_reset();
+#undef maybe_emit_image_chunk_then_reset
 }
 
 static void
-render_sixel_images(struct terminal *term, pixman_image_t *pix,
-                    pixman_region32_t *damage, const struct coord *cursor)
+render_images(struct terminal *term, pixman_image_t *pix,
+              pixman_region32_t *damage, bool above_text,
+              const bool *dirty_rows)
 {
-    if (likely(tll_length(term->grid->sixel_images)) == 0)
+    if (likely(tll_length(term->grid->image_placements)) == 0)
         return;
 
     const int scrollback_end
@@ -1699,20 +1641,20 @@ render_sixel_images(struct terminal *term, pixman_image_t *pix,
 
     const int view_end = view_start + term->rows - 1;
 
-    //LOG_DBG("SIXELS: %zu images, view=%d-%d",
-    //        tll_length(term->grid->sixel_images), view_start, view_end);
+    tll_foreach(term->grid->image_placements, it) {
+        struct image_placement *img = &it->item;
 
-    tll_foreach(term->grid->sixel_images, it) {
-        const struct sixel *six = &it->item;
+        if (above_text != (img->z >= 0))
+            continue;
+
         const int start
-            = (six->pos.row
+            = (img->pos.row
                - scrollback_end
                + term->grid->num_rows) & (term->grid->num_rows - 1);
-        const int end = start + six->rows - 1;
+        const int end = start + img->rows - 1;
 
-        //LOG_DBG("  sixel: %d-%d", start, end);
         if (start > view_end) {
-            /* Sixel starts after view ends, no need to try to render it */
+            /* Image starts after view ends */
             continue;
         } else if (end < view_start) {
             /* Image ends before view starts. Since the image list is
@@ -1720,8 +1662,7 @@ render_sixel_images(struct terminal *term, pixman_image_t *pix,
             break;
         }
 
-        sixel_sync_cache(term, &it->item);
-        render_sixel(term, pix, damage, cursor, &it->item);
+        render_image(term, pix, damage, img, dirty_rows);
     }
 }
 
@@ -3551,7 +3492,15 @@ grid_render(struct terminal *term)
     pixman_region32_t damage;
     pixman_region32_init(&damage);
 
-    render_sixel_images(term, buf->pix[0], &damage, &cursor);
+    bool *dirty_rows = NULL;
+    if (tll_length(term->grid->image_placements) > 0) {
+        dirty_rows = xcalloc(term->rows, sizeof(dirty_rows[0]));
+        for (int r = 0; r < term->rows; r++)
+            dirty_rows[r] = grid_row_in_view(term->grid, r)->dirty;
+    }
+
+    /* Images with negative z are rendered below the text */
+    render_images(term, buf->pix[0], &damage, false, dirty_rows);
 
 
     if (term->render.workers.count > 0) {
@@ -3591,6 +3540,10 @@ grid_render(struct terminal *term)
             sem_wait(&term->render.workers.done);
         term->render.workers.buf = NULL;
     }
+
+    /* Images with non-negative z are rendered above the text */
+    render_images(term, buf->pix[0], &damage, true, dirty_rows);
+    free(dirty_rows);
 
     for (size_t i = 0; i < term->render.workers.count; i++)
         pixman_region32_union(&damage, &damage, &buf->dirty[i + 1]);
@@ -4422,7 +4375,7 @@ delayed_reflow_of_normal_grid(struct terminal *term)
     term->render.last_cursor.row = NULL;
 
     tll_free(term->normal.scroll_damage);
-    sixel_reflow_grid(term, &term->normal);
+    image_placement_reflow_grid(term, &term->normal);
 
     if (term->grid == &term->normal) {
         term_damage_view(term);
@@ -4781,8 +4734,8 @@ render_resize(struct terminal *term, int width, int height, uint8_t opts)
         /*
          * Copy the current viewport (of the original grid) to a new
          * grid that will be used during the resize. For now, throw
-         * away sixels and OSC-8 URLs. They'll be "restored" when we
-         * do the final reflow.
+         * away image placements and OSC-8 URLs. They'll be "restored"
+         * when we do the final reflow.
          *
          * Note that OSC-8 URLs are perfectly ok to throw away; they
          * cannot be interacted with during the resize. And, even if
@@ -4791,7 +4744,7 @@ render_resize(struct terminal *term, int width, int height, uint8_t opts)
          * grid will still render OSC-8 links underlined).
          *
          * TODO:
-         *  - sixels?
+         *  - image placements?
          */
         struct grid g = {
             .num_rows = 1 << (32 - __builtin_clz(term->interactive_resizing.old_screen_rows)),
@@ -4803,7 +4756,7 @@ render_resize(struct terminal *term, int width, int height, uint8_t opts)
             .rows = xcalloc(g.num_rows, sizeof(g.rows[0])),
             .cur_row = NULL,
             .scroll_damage = tll_init(),
-            .sixel_images = tll_init(),
+            .image_placements = tll_init(),
             .kitty_kbd = orig->kitty_kbd,
         };
 
@@ -4929,7 +4882,7 @@ render_resize(struct terminal *term, int width, int height, uint8_t opts)
     term->cols = new_cols;
     term->rows = new_rows;
 
-    sixel_reflow(term);
+    image_placement_reflow(term);
 
     LOG_DBG("resized: grid: cols=%d, rows=%d "
             "(left-margin=%d, right-margin=%d, top-margin=%d, bottom-margin=%d)",

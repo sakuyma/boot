@@ -154,6 +154,12 @@ wayland_cursor = dependency('wayland-cursor')
 xkb = dependency('xkbcommon', version: '>=1.6.0')
 fontconfig = dependency('fontconfig')
 utf8proc = dependency('libutf8proc', required: get_option('grapheme-clustering'))
+zlib = dependency('zlib')
+libpng = dependency('libpng', required: false)
+
+if libpng.found()
+  add_project_arguments('-DHAVE_LIBPNG=1', language: 'c')
+endif
 
 if utf8proc.found()
   add_project_arguments('-DFOOT_GRAPHEME_CLUSTERING=1', language: 'c')
@@ -278,12 +284,13 @@ vtlib = static_library(
   'dcs.c', 'dcs.h',
   'macros.h',
   'osc.c', 'osc.h',
-  'sixel.c', 'sixel.h',
+  'image.c', 'image.h',
+  'kitty.c', 'kitty.h',
   'vt.c', 'vt.h',
   builtin_terminfo, srgb_funcs,
   wl_proto_src + wl_proto_headers,
   version,
-  dependencies: [libepoll, pixman, fcft, tllist, wayland_client, xkb, utf8proc],
+  dependencies: [libepoll, pixman, fcft, tllist, wayland_client, xkb, utf8proc, zlib, libpng],
   link_with: [common, misc],
 )
 
@@ -444,6 +451,7 @@ summary(
     'Themes': get_option('themes'),
     'IME': get_option('ime'),
     'Grapheme clustering': utf8proc.found(),
+    'Kitty graphics (PNG)': libpng.found(),
     'utmp backend': utmp_backend,
     'utmp helper default path': utmp_default_helper_path,
     'Build terminfo': tic.found(),
