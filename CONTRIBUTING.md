@@ -1,4 +1,4 @@
-# Contributing to foot
+# Contributing to boot
 
 ## No LLM / AI policy
 

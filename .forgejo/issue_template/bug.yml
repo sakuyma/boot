@@ -15,9 +15,9 @@ body:
   - type: input
     id: version
     attributes:
-      label: Foot Version
-      description: "The output of `foot --version`"
-      placeholder: "foot version: 1.17.2-11-gc4f13809 (May 20 2024, branch 'master') +pgo +ime +graphemes -assertions"
+      label: Boot Version
+      description: "The output of `boot --version`"
+      placeholder: "boot version: 1.17.2-11-gc4f13809 (May 20 2024, branch 'master') +pgo +ime +graphemes -assertions"
     validations:
       required: true
   - type: input
@@ -25,7 +25,7 @@ body:
     attributes:
       label: TERM environment variable
       description: "The output of `echo $TERM`"
-      placeholder: "foot"
+      placeholder: "boot"
     validations:
       required: true
   - type: input
@@ -48,7 +48,7 @@ body:
     id: multiplexer
     attributes:
       label: Terminal multiplexer
-      description: "Terminal multiplexers are terminal emulators themselves, therefore the issue may be in the multiplexer, not foot. Please list which multiplexer(s) you use here (and mention in the problem description below if the issue only occurs in the multiplexer, but not in bare metal foot)"
+      description: "Terminal multiplexers are terminal emulators themselves, therefore the issue may be in the multiplexer, not boot. Please list which multiplexer(s) you use here (and mention in the problem description below if the issue only occurs in the multiplexer, but not in bare metal boot)"
       placeholder: "tmux, zellij"
   - type: input
     id: application
@@ -60,15 +60,15 @@ body:
     id: server
     attributes:
       label: Server/standalone mode
-      description: Does the issue occur in foot server, or standalone mode, or both? Note that you **cannot** test standalone mode by manually running `foot` from a `footclient` instance, since then the standalone foot will simply inherit the server process' context.
+      description: Does the issue occur in boot server, or standalone mode, or both? Note that you **cannot** test standalone mode by manually running `boot` from a `bootclient` instance, since then the standalone boot will simply inherit the server process' context.
       options:
         - label: Standalone
         - label: Server
   - type: textarea
     id: config
     attributes:
-      label: Foot config
-      description: Paste your entire `foot.ini` here (do not forget to sanitize it!)
+      label: Boot config
+      description: Paste your entire `boot.ini` here (do not forget to sanitize it!)
       render: ini
     validations:
       required: true
@@ -95,7 +95,7 @@ body:
 
         **Terminal multiplexers**: are you using tmux, zellij, or any
         other terminal multiplexer?  Does the bug happen in a plain
-        foot instance?
+        boot instance?
 
         **IME** do you use an IME (e.g. fcitx5, ibus etc)? Which one?
         Does the bug happen if you disable the IME?
@@ -104,21 +104,21 @@ body:
         ------------------------------
 
         Use a [debug
-        build](https://codeberg.org/dnkl/foot/src/branch/master/INSTALL.md#debug-build)
-        of foot if possible, to get a better quality stacktrace in
+        build](https://github.com/sakuyma/boot/blob/master/INSTALL.md#debug-build)
+        of boot if possible, to get a better quality stacktrace in
         case of a crash.
 
-        Run foot with logging enabled:
+        Run boot with logging enabled:
         ```sh
-        foot -d info 2> foot.log
+        boot -d info 2> boot.log
         ```
 
         In many cases, tracing the Wayland communication is extremely helpful:
         ```sh
-        WAYLAND_DEBUG=1 foot -d info 2> foot.wayland.log
+        WAYLAND_DEBUG=1 boot -d info 2> boot.wayland.log
         ```
 
-        Reproduce your problem as quickly as possible, and then exit foot.
+        Reproduce your problem as quickly as possible, and then exit boot.
   - type: textarea
     id: logs
     attributes:

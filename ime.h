@@ -1,12 +1,12 @@
 #pragma once
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
 
 #include "text-input-unstable-v3.h"
 
 extern const struct zwp_text_input_v3_listener text_input_listener;
 
-#endif /* FOOT_IME_ENABLED */
+#endif /* BOOT_IME_ENABLED */
 
 struct seat;
 struct terminal;

@@ -649,9 +649,9 @@ keyboard_keymap(void *data, struct wl_keyboard *wl_keyboard,
          * to which modifier etc, the presence of virtual modifiers
          * causes various things to break.
          *
-         * For example, if a foot shortcut is Mod1+b (i.e. Alt+b), it
+         * For example, if a boot shortcut is Mod1+b (i.e. Alt+b), it
          * won't match if the compositor _also_ sets the Alt modifier
-         * (the corresponding shortcut in foot would be Alt+Mod1+b).
+         * (the corresponding shortcut in boot would be Alt+Mod1+b).
          *
          * See https://codeberg.org/dnkl/foot/issues/2009
          *
@@ -1080,7 +1080,7 @@ legacy_kbd_protocol(struct seat *seat, struct terminal *term,
          *   - if other modifiers are pressed (e.g. Alt), emit a CSI escape
          *   - upper-case symbols A-Z are encoded as an CSI escape
          *   - other upper-case symbols (e.g 'Ö') or emitted as is
-         *   - non-upper cased symbols are _mostly_ emitted as is (foot
+         *   - non-upper cased symbols are _mostly_ emitted as is (boot
          *     always emits as is)
          *
          * Examples (assuming Swedish layout):

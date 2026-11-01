@@ -1,12 +1,12 @@
 [Service]
-ExecStart=@bindir@/foot --server=3
+ExecStart=@bindir@/boot --server=3
 UnsetEnvironment=LISTEN_PID LISTEN_FDS LISTEN_FDNAMES
 NonBlocking=true
 
 [Unit]
 Requires=%N.socket
-Description=Foot terminal server mode
-Documentation=man:foot(1)
+Description=Boot terminal server mode
+Documentation=man:boot(1)
 PartOf=graphical-session.target
 After=graphical-session.target
 ConditionEnvironment=WAYLAND_DISPLAY

@@ -55,8 +55,8 @@ UNITTEST
 
 UNITTEST
 {
-    xassert(c32ncmp(U"foo", U"foot", 3) == 0);
-    xassert(c32ncmp(U"foot", U"FOOT", 4) > 0);
+    xassert(c32ncmp(U"foo", U"foobar", 3) == 0);
+    xassert(c32ncmp(U"foobar", U"FOOBAR", 4) > 0);
     xassert(c32ncmp(U"a", U"b", 1) < 0);
     xassert(c32ncmp(U"bb", U"aa", 2) > 0);
 }

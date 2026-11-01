@@ -47,7 +47,7 @@ struct notification {
     uint8_t *icon_data;
     size_t icon_data_sz;
 
-    bool focus;    /* Focus the foot window when notification is activated */
+    bool focus;    /* Focus the boot window when notification is activated */
     bool may_be_programatically_closed; /* OSC-99: notification may be programmatically closed by the client */
     bool report_activated;  /* OSC-99: report notification activation to client */
     bool report_closed;     /* OSC-99: report notification closed to client */

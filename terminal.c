@@ -377,7 +377,7 @@ fdm_ptmx(struct fdm *fdm, int fd, int events, void *data)
          * to exit.
          *
          * However, when we're using a pre-existing PTY (the --pty
-         * option), there _is_ no client application. That is, foot
+         * option), there _is_ no client application. That is, boot
          * does *not* fork+exec anything, and thus the only way to
          * shutdown is to wait for the PTY to be closed.
          */
@@ -1171,7 +1171,7 @@ static const int PTY_OPEN_FLAGS = O_RDWR | O_NOCTTY;
 
 struct terminal *
 term_init(const struct config *conf, struct fdm *fdm, struct reaper *reaper,
-          struct wayland *wayl, const char *foot_exe, const char *cwd,
+          struct wayland *wayl, const char *boot_exe, const char *cwd,
           const char *token, const char *pty_path,
           int argc, char *const *argv, const char *const *envp,
           void (*shutdown_cb)(void *data, int exit_code), void *shutdown_data)
@@ -1406,10 +1406,10 @@ term_init(const struct config *conf, struct fdm *fdm, struct reaper *reaper,
             .cb = shutdown_cb,
             .cb_data = shutdown_data,
         },
-        .foot_exe = xstrdup(foot_exe),
+        .boot_exe = xstrdup(boot_exe),
         .cwd = xstrdup(cwd),
         .grapheme_shaping = conf->tweak.grapheme_shaping,
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
         .ime_enabled = true,
 #endif
         .active_notifications = tll_init(),
@@ -1521,11 +1521,11 @@ term_window_configured(struct terminal *term)
 /*
  * Shutdown logic
  *
- * A foot instance can be terminated in two ways:
+ * A boot instance can be terminated in two ways:
  *
  *  - the client application terminates (user types 'exit', or pressed C-d in the
  *    shell, etc)
- *  - the foot window is closed
+ *  - the boot window is closed
  *
  * Both variants need to trigger to "other" action. I.e. if the client
  * application is terminated, then we need to close the window. If the window is
@@ -1952,7 +1952,7 @@ term_destroy(struct terminal *term)
     grid_free(term->interactive_resizing.grid);
     free(term->interactive_resizing.grid);
 
-    free(term->foot_exe);
+    free(term->boot_exe);
     free(term->cwd);
     free(term->mouse_user_cursor);
     free(term->color_stack.stack);
@@ -1986,7 +1986,7 @@ term_destroy(struct terminal *term)
              *
              * Note that this solution is *not* asynchronous, and any
              * other events etc will be ignored during this time. This of
-             * course only applies to a 'foot --server' instance, where
+             * course only applies to a 'boot --server' instance, where
              * there might be other terminals running.
              */
             struct sigaction action = {.sa_handler = &sig_alarm};
@@ -2171,7 +2171,7 @@ term_reset(struct terminal *term, bool hard)
 
     term->grapheme_shaping = term->conf->tweak.grapheme_shaping;
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     term_ime_enable(term);
 #endif
 
@@ -3341,7 +3341,7 @@ term_kbd_focus_out(struct terminal *term)
         if (it->item.kbd_focus == term)
             return;
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     if (term_ime_reset(term))
         render_refresh(term);
 #endif
@@ -3364,10 +3364,10 @@ linux_mouse_button_to_x(int button)
     case BTN_LEFT:          return 1;
     case BTN_MIDDLE:        return 2;
     case BTN_RIGHT:         return 3;
-    case BTN_WHEEL_BACK:    return 4;  /* Foot custom define */
-    case BTN_WHEEL_FORWARD: return 5;  /* Foot custom define */
-    case BTN_WHEEL_LEFT:    return 6;  /* Foot custom define */
-    case BTN_WHEEL_RIGHT:   return 7;  /* Foot custom define */
+    case BTN_WHEEL_BACK:    return 4;  /* Boot custom define */
+    case BTN_WHEEL_FORWARD: return 5;  /* Boot custom define */
+    case BTN_WHEEL_LEFT:    return 6;  /* Boot custom define */
+    case BTN_WHEEL_RIGHT:   return 7;  /* Boot custom define */
     case BTN_SIDE:          return 8;
     case BTN_EXTRA:         return 9;
     case BTN_FORWARD:       return 10;
@@ -3733,8 +3733,8 @@ term->window_icon != NULL
         ? term->window_icon
         :
         #endif
-        streq(app_id, "footclient")
-            ? "foot"
+        streq(app_id, "bootclient")
+            ? "boot"
             : app_id;
 }
 
@@ -3806,7 +3806,7 @@ term_spawn_new(const struct terminal *term)
     char *argv[4];
     int argc = 0;
 
-    argv[argc++] = term->foot_exe;
+    argv[argc++] = term->boot_exe;
     if (term->conf->conf_path != NULL) {
         argv[argc++] = "--config";
         argv[argc++] = term->conf->conf_path;
@@ -4084,7 +4084,7 @@ term_print(struct terminal *term, char32_t wc, int width, bool insert_mode_disab
 
     grid->cursor.point.col = col;
 
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
     term->vt.codepoint_merging_ok = true;
 #endif
 }
@@ -4126,7 +4126,7 @@ ascii_printer_fast(struct terminal *term, char32_t wc)
         xassert(!grid->cursor.lcf);
 
     grid->cursor.point.col = col;
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
     term->vt.codepoint_merging_ok = true;
 #endif
 
@@ -4176,7 +4176,7 @@ term_single_shift(struct terminal *term, enum charset_designator idx)
     term->ascii_printer = &ascii_printer_single_shift;
 }
 
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
 static int
 emoji_vs_compare(const void *_key, const void *_entry)
 {
@@ -4214,12 +4214,12 @@ term_process_and_print_non_ascii(struct terminal *term, char32_t wc)
     int width = c32width(wc);
     bool insert_mode_disable = false;
     const bool grapheme_clustering = term->grapheme_shaping
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
         && term->vt.codepoint_merging_ok
 #endif
         ;
 
-#if !defined(FOOT_GRAPHEME_CLUSTERING)
+#if !defined(BOOT_GRAPHEME_CLUSTERING)
     xassert(!grapheme_clustering);
 #endif
 
@@ -4255,7 +4255,7 @@ term_process_and_print_non_ascii(struct terminal *term, char32_t wc)
         } else
             key = composed_key_from_key(base, wc);
 
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
         if (grapheme_clustering) {
             /* Check if we're on a grapheme cluster break */
             if (utf8proc_grapheme_break_stateful(
@@ -4379,7 +4379,7 @@ term_process_and_print_non_ascii(struct terminal *term, char32_t wc)
             case GRAPHEME_WIDTH_DOUBLE:
                 new_cc->width = min(grapheme_width + width, 2);
 
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
                 /* Handle VS-15 and VS-16 variation selectors */
                 if (unlikely(grapheme_clustering &&
                              (wc == 0xfe0e || wc == 0xfe0f) &&
@@ -4617,7 +4617,7 @@ term_command_output_to_text(const struct terminal *term, char **text, size_t *le
 bool
 term_ime_is_enabled(const struct terminal *term)
 {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     return term->ime_enabled;
 #else
     return false;
@@ -4627,7 +4627,7 @@ term_ime_is_enabled(const struct terminal *term)
 void
 term_ime_enable(struct terminal *term)
 {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     if (term->ime_enabled)
         return;
 
@@ -4646,7 +4646,7 @@ term_ime_enable(struct terminal *term)
 void
 term_ime_disable(struct terminal *term)
 {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     if (!term->ime_enabled)
         return;
 
@@ -4667,7 +4667,7 @@ term_ime_reset(struct terminal *term)
 {
     bool at_least_one_seat_was_reset = false;
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     tll_foreach(term->wl->seats, it) {
         struct seat *seat = &it->item;
 
@@ -4686,7 +4686,7 @@ void
 term_ime_set_cursor_rect(struct terminal *term, int x, int y, int width,
                          int height)
 {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     tll_foreach(term->wl->seats, it) {
         if (it->item.kbd_focus == term) {
             it->item.ime.cursor_rect.pending.x = x;

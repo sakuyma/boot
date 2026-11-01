@@ -1,5 +1,5 @@
 option('docs', type: 'feature',
-       description: 'Build and install documentation (man pages, example foot.ini, readme, changelog, license etc).')
+       description: 'Build and install documentation (man pages, example boot.ini, readme, changelog, license etc).')
 
 option('themes', type: 'boolean', value: true,
        description: 'Install themes (predefined color schemes)')
@@ -12,13 +12,13 @@ option('grapheme-clustering', type: 'feature',
 
 option('tests', type: 'boolean', value: true, description: 'Build tests')
 
-option('terminfo', type: 'feature', value: 'enabled', description: 'Build and install foot\'s terminfo files.')
-option('default-terminfo', type: 'string', value: 'foot',
-       description: 'Default value of the "term" option in foot.ini.')
+option('terminfo', type: 'feature', value: 'enabled', description: 'Build and install boot\'s terminfo files.')
+option('default-terminfo', type: 'string', value: 'boot',
+       description: 'Default value of the "term" option in boot.ini.')
 option('terminfo-base-name', type: 'string',
        description: 'Base name of the generated terminfo files. Defaults to the value of the \'default-terminfo\' meson option')
 option('custom-terminfo-install-location', type: 'string', value: '',
-       description: 'Path to foot\'s terminfo, relative to ${prefix}. If set, foot will set $TERMINFO to this value in the client process.')
+       description: 'Path to boot\'s terminfo, relative to ${prefix}. If set, boot will set $TERMINFO to this value in the client process.')
 
 option('systemd-units-dir', type: 'string', value: '',
       description: 'Where to install the systemd service files (absolute path). Default: ${systemduserunitdir}')

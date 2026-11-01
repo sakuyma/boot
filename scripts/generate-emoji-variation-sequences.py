@@ -80,7 +80,7 @@ def main() -> None:
     opts.output.write('} __attribute__((packed));\n')
     opts.output.write('_Static_assert(sizeof(struct emoji_vs) == 6, "unexpected struct size");\n')
     opts.output.write('\n')
-    opts.output.write('#if defined(FOOT_GRAPHEME_CLUSTERING)\n')
+    opts.output.write('#if defined(BOOT_GRAPHEME_CLUSTERING)\n')
     opts.output.write('\n')
 
     opts.output.write(f'static const struct emoji_vs emoji_vs[{len(compacted)}] = {{\n')
@@ -95,7 +95,7 @@ def main() -> None:
 
     opts.output.write('};\n')
     opts.output.write('\n')
-    opts.output.write('#endif  /* FOOT_GRAPHEME_CLUSTERING */\n')
+    opts.output.write('#endif  /* BOOT_GRAPHEME_CLUSTERING */\n')
 
 
 if __name__ == '__main__':

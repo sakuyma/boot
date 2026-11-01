@@ -8,7 +8,7 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
  #include <utf8proc.h>
 #endif
 
@@ -88,7 +88,7 @@ static inline bool hasc32upper(const char32_t *s) {
 }
 
 static inline int c32width(char32_t c) {
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
     return utf8proc_charwidth((utf8proc_int32_t)c);
 #else
     return wcwidth((wchar_t)c);
@@ -96,7 +96,7 @@ static inline int c32width(char32_t c) {
 }
 
 static inline int c32swidth(const char32_t *s, size_t n) {
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
     int width = 0;
     for (size_t i = 0; i < n; i++)
         width += utf8proc_charwidth((utf8proc_int32_t)s[i]);

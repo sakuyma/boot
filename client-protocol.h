@@ -31,7 +31,7 @@ struct client_data {
 _Static_assert(sizeof(struct client_data) == 10, "protocol struct size error");
 
 enum client_ipc_code {
-    FOOT_IPC_SIGUSR,
+    BOOT_IPC_SIGUSR,
 };
 
 struct client_ipc_hdr {

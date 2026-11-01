@@ -22,7 +22,7 @@
 
 #include "config.h"
 #include "fdm.h"
-#include "foot-features.h"
+#include "boot-features.h"
 #include "key-binding.h"
 #include "macros.h"
 #include "reaper.h"
@@ -78,13 +78,13 @@ print_usage(const char *prog_name)
 {
     static const char options[] =
         "\nOptions:\n"
-        "  -c,--config=PATH                         load configuration from PATH ($XDG_CONFIG_HOME/foot/foot.ini)\n"
+        "  -c,--config=PATH                         load configuration from PATH ($XDG_CONFIG_HOME/boot/boot.ini)\n"
         "  -C,--check-config                        verify configuration, exit with 0 if ok, otherwise exit with 1\n"
         "  -o,--override=[section.]key=value        override configuration option\n"
         "  -f,--font=FONT                           comma separated list of fonts in fontconfig format (monospace)\n"
-        "  -t,--term=TERM                           value to set the environment variable TERM to (" FOOT_DEFAULT_TERM ")\n"
-        "  -T,--title=TITLE                         initial window title (foot)\n"
-        "  -a,--app-id=ID                           window application ID (foot)\n"
+        "  -t,--term=TERM                           value to set the environment variable TERM to (" BOOT_DEFAULT_TERM ")\n"
+        "  -T,--title=TITLE                         initial window title (boot)\n"
+        "  -a,--app-id=ID                           window application ID (boot)\n"
         "     --toplevel-tag=TAG                    set a custom toplevel tag\n"
         "  -m,--maximized                           start in maximized mode\n"
         "  -F,--fullscreen                          start in fullscreen mode\n"
@@ -93,8 +93,8 @@ print_usage(const char *prog_name)
         "  -D,--working-directory=DIR               directory to start in (CWD)\n"
         "  -w,--window-size-pixels=WIDTHxHEIGHT     initial width and height, in pixels\n"
         "  -W,--window-size-chars=WIDTHxHEIGHT      initial width and height, in characters\n"
-        "  -s,--server[=PATH]                       run as a server (use 'footclient' to start terminals).\n"
-        "                                           Without PATH, $XDG_RUNTIME_DIR/foot-$WAYLAND_DISPLAY.sock will be used.\n"
+        "  -s,--server[=PATH]                       run as a server (use 'bootclient' to start terminals).\n"
+        "                                           Without PATH, $XDG_RUNTIME_DIR/boot-$WAYLAND_DISPLAY.sock will be used.\n"
         "  -H,--hold                                remain open after child process exits\n"
         "  -p,--print-pid=FILE|FD                   print PID to file or FD (only applicable in server mode)\n"
         "  -d,--log-level={info|warning|error|none} log level (warning)\n"
@@ -193,10 +193,10 @@ enum {
 int
 main(int argc, char *const *argv)
 {
-    /* Custom exit code, to enable users to differentiate between foot
+    /* Custom exit code, to enable users to differentiate between boot
      * itself failing, and the client application failing */
-    static const int foot_exit_failure = -26;
-    int ret = foot_exit_failure;
+    static const int boot_exit_failure = -26;
+    int ret = boot_exit_failure;
 
     sanitize_signals();
 
@@ -420,7 +420,7 @@ main(int argc, char *const *argv)
             break;
 
         case 'v':
-            print_version_and_features("foot ");
+            print_version_and_features("boot ");
             return EXIT_SUCCESS;
 
         case 'h':
@@ -586,7 +586,7 @@ main(int argc, char *const *argv)
     struct renderer *renderer = NULL;
     struct terminal *term = NULL;
     struct server *server = NULL;
-    struct shutdown_context shutdown_ctx = {.term = &term, .exit_code = foot_exit_failure};
+    struct shutdown_context shutdown_ctx = {.term = &term, .exit_code = boot_exit_failure};
 
     const char *cwd = custom_cwd;
     char *_cwd = NULL;
@@ -649,7 +649,7 @@ main(int argc, char *const *argv)
         goto out;
 
     if (!as_server && (term = term_init(
-                           &conf, fdm, reaper, wayl, "foot", cwd, token, pty_path,
+                           &conf, fdm, reaper, wayl, "boot", cwd, token, pty_path,
                            argc, argv, NULL,
                            &term_shutdown_cb, &shutdown_ctx)) == NULL) {
         goto out;
@@ -688,7 +688,7 @@ main(int argc, char *const *argv)
     }
 
     if (as_server)
-        LOG_INFO("running as server; launch terminals by running footclient");
+        LOG_INFO("running as server; launch terminals by running bootclient");
 
     if (as_server && pid_file != NULL) {
         if (!print_pid(pid_file, &unlink_pid_file))
@@ -698,7 +698,7 @@ main(int argc, char *const *argv)
     ret = EXIT_SUCCESS;
     while (likely(!aborted && (as_server || tll_length(wayl->terms) > 0))) {
         if (unlikely(!fdm_poll(fdm))) {
-            ret = foot_exit_failure;
+            ret = boot_exit_failure;
             break;
         }
     }

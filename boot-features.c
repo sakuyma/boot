@@ -1,22 +1,22 @@
-#include "foot-features.h"
+#include "boot-features.h"
 #include "version.h"
 
 const char version_and_features[] =
-    "version: " FOOT_VERSION
+    "version: " BOOT_VERSION
 
-#if defined(FOOT_PGO_ENABLED) && FOOT_PGO_ENABLED
+#if defined(BOOT_PGO_ENABLED) && BOOT_PGO_ENABLED
     " +pgo"
 #else
     " -pgo"
 #endif
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     " +ime"
 #else
     " -ime"
 #endif
 
-#if defined(FOOT_GRAPHEME_CLUSTERING) && FOOT_GRAPHEME_CLUSTERING
+#if defined(BOOT_GRAPHEME_CLUSTERING) && BOOT_GRAPHEME_CLUSTERING
     " +graphemes"
 #else
     " -graphemes"

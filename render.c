@@ -1666,7 +1666,7 @@ render_images(struct terminal *term, pixman_image_t *pix,
     }
 }
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
 static void
 render_ime_preedit_for_seat(struct terminal *term, struct seat *seat,
                             struct buffer *buf)
@@ -1833,7 +1833,7 @@ render_ime_preedit_for_seat(struct terminal *term, struct seat *seat,
 static void
 render_ime_preedit(struct terminal *term, struct buffer *buf)
 {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     tll_foreach(term->wl->seats, it) {
         if (it->item.kbd_focus == term)
             render_ime_preedit_for_seat(term, &it->item, buf);
@@ -2134,7 +2134,7 @@ render_worker_thread(void *_ctx)
     pthread_sigmask(SIG_SETMASK, &mask, NULL);
 
     char proc_title[16];
-    snprintf(proc_title, sizeof(proc_title), "foot:render:%d", my_id);
+    snprintf(proc_title, sizeof(proc_title), "boot:render:%d", my_id);
 
     if (pthread_setname_np(pthread_self(), proc_title) < 0)
         LOG_ERRNO("render worker %d: failed to set process title", my_id);
@@ -3686,7 +3686,7 @@ render_search_box(struct terminal *term)
      * rendering etc.
      */
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     /* TODO: do we want to/need to handle multi-seat? */
     struct seat *ime_seat = NULL;
     tll_foreach(term->wl->seats, it) {
@@ -3803,7 +3803,7 @@ render_search_box(struct terminal *term)
         if (i != term->search.cursor)
             continue;
 
-#if (FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if (BOOT_IME_ENABLED) && BOOT_IME_ENABLED
         if (ime_seat != NULL && ime_seat->ime.preedit.cells != NULL) {
             if (ime_seat->ime.preedit.cursor.start == ime_seat->ime.preedit.cursor.end) {
                 /* All IME's I've seen so far keeps the cursor at
@@ -3867,7 +3867,7 @@ render_search_box(struct terminal *term)
     /* Convert subsurface coordinates to window coordinates*/
         /* Render cursor */
         if (i == term->search.cursor) {
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
             bool have_preedit =
                 ime_seat != NULL && ime_seat->ime.preedit.cells != NULL;
             bool hidden =
@@ -3976,7 +3976,7 @@ render_search_box(struct terminal *term)
         cell_idx = next_cell_idx;
     }
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
         if (ime_seat != NULL && ime_seat->ime.preedit.cells != NULL)
             /* Already rendered */;
         else
@@ -4009,7 +4009,7 @@ render_search_box(struct terminal *term)
     wl_surface_commit(term->window->search.surface.surf);
     quirk_weston_subsurface_desync_off(term->window->search.sub);
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     free(text);
 #endif
 #undef WINDOW_X
@@ -4250,7 +4250,7 @@ render_update_title(struct terminal *term)
 {
     static const size_t max_len = 2048;
 
-    const char *title = term->window_title != NULL ? term->window_title : "foot";
+    const char *title = term->window_title != NULL ? term->window_title : "boot";
     char *copy = NULL;
 
     if (strlen(title) > max_len) {

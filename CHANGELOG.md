@@ -98,7 +98,7 @@
 
 ### Fixed
 
-* Use-after-free during shutdown when footclient and the client
+* Use-after-free during shutdown when bootclient and the client
   application exit simultaneously in a short window ([#2432][2432]).
 * Crash when a buggy compositor sends an `ime_enter()` event with a
   `NULL` surface ([#2467][2467]).
@@ -147,8 +147,8 @@
   + require at least one character inside balanced `[]`, `()`, `''` or
     `""`.
   ([#2417][2417]).
-* Foot now sets window urgency when a notification is activated, and
-  foot hasn't received an XDG activation token.
+* Boot now sets window urgency when a notification is activated, and
+  boot hasn't received an XDG activation token.
 * `-D,--working-directory` now supports `file://` URIs.
 
 [2383]: https://codeberg.org/dnkl/foot/issues/2383
@@ -181,7 +181,7 @@
 * Passing a very large value as CHT/CBT argument hangs the terminal
   ([#2360][2360]).
 * Sixel: crash when using a shared palette and gamma-correct blending
-  has been enabled, or foot is using 10-bit surface ([#2370][2370]).
+  has been enabled, or boot is using 10-bit surface ([#2370][2370]).
 * Kitty text-size protocol: fix crash when text is zero-length
   ([#2364][2364]).
 * Escape quotes in file names being DnD:ed on the command line
@@ -288,7 +288,7 @@
 ### Fixed
 
 * Wrong documented default value for `initial-color-theme` in
-  `foot.ini(5)` ([#2292][2292]).
+  `boot.ini(5)` ([#2292][2292]).
 * Occasional crashes when closing a window and
   `tweak.pre-apply-damage=yes` (the default) ([#2288][2288]).
 
@@ -307,12 +307,12 @@
 ### Added
 
 * `toplevel-tag` option (and `--toplevel-tag` command line options to
-  `foot` and `footclient`), allowing you to set a custom toplevel
+  `boot` and `bootclient`), allowing you to set a custom toplevel
   tag. The compositor must implement the new `xdg-toplevel-tag-v1`
   Wayland protocol ([#2212][2212]).
-* `[colors-dark]` section to `foot.ini`. Replaces `[colors]`.
-* `[colors-light]` section to `foot.ini`. Replaces `[colors2]`.
-* `XTGETTCAP`: added `query-os-name`, returning the OS foot is
+* `[colors-dark]` section to `boot.ini`. Replaces `[colors]`.
+* `[colors-light]` section to `boot.ini`. Replaces `[colors2]`.
+* `XTGETTCAP`: added `query-os-name`, returning the OS boot is
   compiled for (e.g. _'Linux'_) ([#2209][2209]).
 * `pad` option now supports 4-directional padding format:
   `LEFTxTOPxRIGHTxBOTTOM` (e.g., `20x10x20x10`).
@@ -320,7 +320,7 @@
   terminals spawned via `spawn-terminal` action ([#2259][2259]).
 * Preliminary (untested) support for background blur via the new
   `ext-background-effect-v1` protocol. Enable by setting
-  `colors-{dark,light}.blur=yes`. Foot needs to have been **built**
+  `colors-{dark,light}.blur=yes`. Boot needs to have been **built**
   against `wayland-protocols >= 1.45`, and the compositor **must**
   implement the `ext-background-effect-v1` protocol, **and** the
   `blur` effect.
@@ -332,16 +332,16 @@
 
 ### Changed
 
-* When enabling _"focus mode"_ (private mode 1004), foot now sends a
+* When enabling _"focus mode"_ (private mode 1004), boot now sends a
   focus event immediately, to inform the application what the current
   state is ([#2202][2202]).
 * Scrollback search is now case sensitive when the search string
   contains at least one upper case character.
 * Mouse tracking in SGR pixel mode no longer emits negative column/row
   pixel values ([#2226][2226]).
-* Foot now always uses ARGB SHM surfaces. In earlier versions, XRGB
+* Boot now always uses ARGB SHM surfaces. In earlier versions, XRGB
   surfaces were used for opaque surfaces. Unfortunately, several
-  compositors had issues when foot switched between ARGB and XRGB
+  compositors had issues when boot switched between ARGB and XRGB
   surfaces (for example when switching color theme, or toggling
   fullscreen).
 
@@ -351,8 +351,8 @@
 
 ### Deprecated
 
-* `[colors]` section in `foot.ini`. Use `[colors-dark]` instead.
-* `[colors2]` section in `foot.ini`. Use `[colors-light]` instead.
+* `[colors]` section in `boot.ini`. Use `[colors-dark]` instead.
+* `[colors2]` section in `boot.ini`. Use `[colors-light]` instead.
 
 
 ### Removed
@@ -416,7 +416,7 @@
 * SHM buffer sizes are now rounded up to nearest page size, and their
   stride is always an even multiple of 256 bytes (by default,
   configurable by setting `tweak.min-stride-alignment`). This allows
-  compositor to directly import foot's SHM buffers to the GPU, with
+  compositor to directly import boot's SHM buffers to the GPU, with
   e.g. integrated graphics ([#2182][2182]).
 * Jump label colors in the modus-operandi theme, for improved
   readability.
@@ -459,10 +459,10 @@
 
 * The label letters are no longer sorted before being assigned to URLs
   ([#2140][2140]).
-* Sending SIGUSR1/SIGUSR2 to a `foot --server` process now causes
+* Sending SIGUSR1/SIGUSR2 to a `boot --server` process now causes
   newly spawned client instances to use the selected theme, instead of
   the original one.
-* SIGUSR1/SIGUSR2 can now be sent to `footclient` processes, to change
+* SIGUSR1/SIGUSR2 can now be sent to `bootclient` processes, to change
   the theme of that particular instance ([#2156][2156]).
 
 [2156]: https://codeberg.org/dnkl/foot/issues/2156
@@ -514,7 +514,7 @@
   `key-bindings.color-theme-toggle` key bindings. These can be used to
   switch between the primary and alternative color themes. They are
   not bound by default.
-* Sending `SIGUSR1` to the foot process now triggers a theme switch
+* Sending `SIGUSR1` to the boot process now triggers a theme switch
   (in server mode, **all** instances toggles their themes).
 * Support for private mode 2031 - [_Dark and Light Mode
   Detection_](https://contour-terminal.org/vt-extensions/color-palette-update-notifications/)
@@ -530,7 +530,7 @@
   - solarized
 * `regex-copy`/`show-urls-copy` will copy and paste the selected text if the hint
   is completed with an uppercase character ([#1975][1975]).
-* `16-bit` to `tweak.surface-bit-depth`. Makes foot use 16-bit image
+* `16-bit` to `tweak.surface-bit-depth`. Makes boot use 16-bit image
   buffers. They provide the necessary color precision required by
   `gamma-correct-blending=yes`.
 * New cursor shapes, from `cursor-shape-v1` version 2.
@@ -547,7 +547,7 @@
 
 * `cursor.color` moved to `colors.cursor`.
 * OSC-11 without an alpha value will now restore the configured
-  (i.e. from `foot.ini`) alpha, rather than keeping whatever the
+  (i.e. from `boot.ini`) alpha, rather than keeping whatever the
   current alpha value is, unchanged.
 * `gamma-correct-blending=yes` now defaults to `16-bit` image buffers,
   instead of `10-bit`.
@@ -666,13 +666,13 @@
 ### Added
 
 * Support for toplevel edge constraints. When the compositor indicates
-  the toplevel has edge constraints, foot will not allow the window to
+  the toplevel has edge constraints, boot will not allow the window to
   be resized (via CSDs) in the constrained directions.
 * Virtual modifiers (e.g. `Alt` instead of `Mod1`, `Super` instead of
   `Mod4` etc) in key bindings are now recognized as being virtual, and
   are automatically mapped to the corresponding real modifier. This
   means you can use e.g. `Alt+b` instead of `Mod1+b`.
-* `alpha-mode` option to `foot.ini`. Defaults to `default`. This
+* `alpha-mode` option to `boot.ini`. Defaults to `default`. This
   config changes how alpha is handled on background colours not set by
   the terminal.(e.g. vim) ([#2026](2026))
 
@@ -687,11 +687,11 @@
   rather than converting to HSL and adjusting the luminance
   ([#2006][2006]).
 * Virtual modifiers in keyboard events from the compositor are now
-  supported. This works around various issues seen when running foot
+  supported. This works around various issues seen when running boot
   under mutter (GNOME) ([#2009][2009]):
   - Some key combinations generating the wrong escape sequence in the
     kitty keyboard protocol.
-  - some of foot's default shortcuts not working (mainly those using
+  - some of boot's default shortcuts not working (mainly those using
     `Mod1`) out of the box.
 * Default URL regex changed to a much more strict variant
   ([#2016][2016]). You can manually set the [old
@@ -792,7 +792,7 @@
 
 * Kitty keyboard protocol: alternate key reporting failing to report
   the alternate codepoint in some corner cases ([#1918][1918]).
-* `foot` and `footclient` hanging, or terminating with `SIGABRT`, when
+* `boot` and `bootclient` hanging, or terminating with `SIGABRT`, when
   starting inside a directory whose total length is more than 1024
   characters.
 * Regression: reflowing (resizing the window) a line that ends with a
@@ -801,7 +801,7 @@
   space inserted at the end of the current line.
 * Wrong key bindings executed when using alternative keyboard layouts
   ([#1929][1929]).
-* Foot not closing file descriptors for unrecognized or `no_keymap`
+* Boot not closing file descriptors for unrecognized or `no_keymap`
   keymaps.
 * Combining characters (including emojis consisting of multiple
   codepoints) not being handled correctly when _insert mode_ is
@@ -859,7 +859,7 @@
 * 'flash' overlay (triggered by either `tput flash`, or enabling
   `bell.visual` and then sending `BEL` to the terminal) stuck when
   `colors.flash-alpha=1.0`.
-* Crash when compositor sends a keyboard enter event before the foot
+* Crash when compositor sends a keyboard enter event before the boot
   window has been mapped ([#1910][1910]).
 * Build failures (`utf8proc.h` not found) on at least FreeBSD, but
   most likely other BSDs, as well as some Linuxes ([#1903][1903]).
@@ -889,7 +889,7 @@
 ### Fixed
 
 * Regression: trying to print a Unicode _"Legacy Computing symbol"_,
-  in the range U+1FB00 - U+1FB9B would crash foot ([#1901][1901]).
+  in the range U+1FB00 - U+1FB9B would crash boot ([#1901][1901]).
 
 [1901]: https://codeberg.org/dnkl/foot/issues/1901
 
@@ -898,7 +898,7 @@
 
 ### Added
 
-* Unicode data files updated to Unicode 16. Foot uses these to
+* Unicode data files updated to Unicode 16. Boot uses these to
   determine which VS-15 and VS-16 sequences are valid, and which are
   not.
 * Box drawing characters U+1CD00...U+1CDE5 (the _"octants"_ from the
@@ -917,7 +917,7 @@
   sequences are ConEmu/Windows Terminal sequences, and not intended to
   be notifications.
 * Use `utf8proc_charwidth()` instead of `wcwidth()`+`wcswidth()` when
-  calculating character width, when foot has been built with utf8proc
+  calculating character width, when boot has been built with utf8proc
   support ([#1865][1865]).
 * Run-time changes to the window title, and the app ID now require the
   new value to consist of printable characters only.
@@ -968,20 +968,20 @@
 * `cursor.unfocused-style` is now effective even when `cursor.style`
   is not `block`.
 * Activating a notification triggered with OSC-777, or BEL, now
-  focuses the foot window, if XDG activation tokens are supported by
+  focuses the boot window, if XDG activation tokens are supported by
   the compositor, the notification daemon, and the notification helper
-  used by foot (i.e. `desktop-notifications.command`). This has been
+  used by boot (i.e. `desktop-notifications.command`). This has been
   supported for OSC-99 since 1.18.0, and now we also support it for
   BEL and OSC-777 ([#1822][1822]).
 * Sixel background color (when `P2=0|2`) is now set to the **sixel**
   color palette entry #0, instead of using the current ANSI background
   color. This is what a real VT340 does.
 * The `.desktop` files no longer use the reverse DNS naming scheme,
-  and their names now match the default app-ids used by foot (`foot`
-  and `footclient`) ([#1607][1607]).
+  and their names now match the default app-ids used by boot (`boot`
+  and `bootclient`) ([#1607][1607]).
 * `file://` prefix are now stripped from OSC-8 URIs when
   activated/opened, **if** the hostname matches the hostname of the
-  computer foot is running on ([#1840][1840]).
+  computer boot is running on ([#1840][1840]).
 
 [1822]: https://codeberg.org/dnkl/foot/issues/1822
 [1607]: https://codeberg.org/dnkl/foot/issues/1607
@@ -992,17 +992,17 @@
 
 * Some invalid UTF-8 strings passing the validity check when setting
   the window title, triggering a Wayland protocol error which then
-  caused foot to shutdown.
+  caused boot to shutdown.
 * "Too large" values for `scrollback.lines` causing an integer
   overflow, resulting in either visual glitches, crashes, or both
   ([#1828][1828]).
 * Crash when trying to set an invalid cursor shape with OSC-22, when
-  foot uses server-side cursor shapes.
-* Occasional visual glitches when selecting text, when foot is running
-  under a compositor that forces foot to double buffer
+  boot uses server-side cursor shapes.
+* Occasional visual glitches when selecting text, when boot is running
+  under a compositor that forces boot to double buffer
   (e.g. KDE/KWin) ([#1715][1715]).
-* Sixels flickering when foot is running under a compositor that
-  forces foot to double buffer (e.g. KDE, or Smithay based
+* Sixels flickering when boot is running under a compositor that
+  forces boot to double buffer (e.g. KDE, or Smithay based
   compositors) ([#1851][1851]).
 
 [1828]: https://codeberg.org/dnkl/foot/issues/1828
@@ -1103,7 +1103,7 @@
 
   In other words, if, after this change, `XTGETTCAP` returns a string
   that is different compared to `tigetstr()`, then it is likely a bug
-  in foot's implementation of `XTGETTCAP`.
+  in boot's implementation of `XTGETTCAP`.
 * If the cursor foreground and background colors are identical (for
   example, when cursor uses inverted colors and the cell's foreground
   and background are the same), the cursor will instead be rendered
@@ -1119,7 +1119,7 @@
   _also_ generates `BTN_BACK` and `BTN_FORWARD`, from wheel scrolling
   ([#1763][1763]).
 * Replaced the old catppuccin theme with updated flavored themes
-  pulled from [catppuccin/foot](https://github.com/catppuccin/foot)
+  pulled from [catppuccin/boot](https://github.com/catppuccin/foot)
 * Mouse selections can now be started inside the margins
   ([#1702][1702]).
 
@@ -1142,12 +1142,12 @@
   monitor's DPI is 0 (this is true for, for example, nested Wayland
   sessions, or in virtualized environments).
 * No error response for empty `XTGETTCAP` request ([#1694][1694]).
-* Unicode-mode in one foot client affecting other clients, in foot
+* Unicode-mode in one boot client affecting other clients, in boot
   server mode ([#1717][1717]).
 * IME interfering in URL-mode ([#1718][1718]).
 * OSC-52 reply interleaved with other data sent to the client
   ([#1734][1734]).
-* XKB compose state being reset when foot receives a new keymap
+* XKB compose state being reset when boot receives a new keymap
   ([#1744][1744]).
 * Regression: alpha changes through OSC-11 sequences not taking effect
   until window is resized.
@@ -1155,7 +1155,7 @@
 * VS16 being ignored for a subset of the valid VS16 sequences
   ([#1742][1742]).
 * Crash in debug builds, when using OSC-12 to set the cursor color and
-  foot config has not set any custom cursor colors (i.e. without
+  boot config has not set any custom cursor colors (i.e. without
   OSC-12, inverted fg/bg would be used).
 * Wrong color used when drawing the unfocused, hollow cursor.
 * Encoding of `BTN_BACK` and `BTN_FORWARD`, when sending a mouse input
@@ -1189,7 +1189,7 @@
 ### Fixed
 
 * Crash when changing aspect ratio of a sixel, in the middle of the
-  sixel data (this is unsupported in foot, but should of course not
+  sixel data (this is unsupported in boot, but should of course not
   result in a crash).
 * Crash when printing double-width (or longer) characters to, or near,
   the last column, when auto-wrap (private mode 7) has been disabled.
@@ -1203,7 +1203,7 @@
 
 ### Added
 
-* `cursor.unfocused-style=unchanged|hollow|none` to `foot.ini`. The
+* `cursor.unfocused-style=unchanged|hollow|none` to `boot.ini`. The
   default is `hollow` ([#1582][1582]).
 * New key binding: `quit` ([#1475][1475]).
 
@@ -1268,7 +1268,7 @@
 * config: ARGB color values now default to opaque, rather than
   transparent, when the alpha component has been left out
   ([#1526][1526]).
-* The `foot` process now changes CWD to `/` after spawning the shell
+* The `boot` process now changes CWD to `/` after spawning the shell
   process. This ensures the terminal itself does not "lock" a
   directory; for example, preventing a mount point from being
   unmounted ([#1528][1528]).
@@ -1329,7 +1329,7 @@
   `cursor-shape-v1` Wayland protocols ([#1573][1573]).
 * Crash in `--server` mode when one or more environment variables are
   set in `[environment]`.
-* Environment variables normally set by foot lost with `footclient
+* Environment variables normally set by boot lost with `bootclient
   -E,--client-environment` ([#1568][1568]).
 * XDG toplevel protocol violation, by trying to set a title that
   contains an invalid UTF-8 sequence ([#1552][1552]).
@@ -1390,7 +1390,7 @@
 
 ### Fixed
 
-* Foot not starting on linux kernels before 6.3 ([#1514][1514]).
+* Boot not starting on linux kernels before 6.3 ([#1514][1514]).
 * Cells underneath erased sixels not being repainted ([#1515][1515]).
 
 [1514]: https://codeberg.org/dnkl/foot/issues/1514
@@ -1439,7 +1439,7 @@
 
 * Minimum required version of _wayland-protocols_ is now 1.32
   ([#1391][1391]).
-* `foot-server.service` systemd now checks for
+* `boot-server.service` systemd now checks for
   `ConditionEnvironment=WAYLAND_DISPLAY` for consistency with the
   socket unit ([#1448][1448])
 * Default key binding for `select-row` is now `BTN_LEFT+4`. However,
@@ -1524,9 +1524,9 @@
 * `[tweak].bold-text-in-bright-amount` option ([#1434][1434]).
 * `-Dterminfo-base-name` meson option, allowing you to name the
   terminfo files to something other than `-Ddefault-terminfo`. Use
-  case: have foot default to using the terminfo from ncurses (`foot`,
-  `foot-direct`), while still packaging foot's terminfo files, but
-  under a different name (e.g. `foot-extra`, `foot-extra-direct`).
+  case: have boot default to using the terminfo from ncurses (`boot`,
+  `boot-direct`), while still packaging boot's terminfo files, but
+  under a different name (e.g. `boot-extra`, `boot-extra-direct`).
 
 [1434]: https://codeberg.org/dnkl/foot/issues/1434
 
@@ -1565,11 +1565,11 @@
 * Starlight theme (the default theme) updated to [V4][starlight-v4]
 * Background transparency (alpha) is now disabled in fullscreened
   windows ([#1416][1416]).
-* Foot server systemd units now use the standard
+* Boot server systemd units now use the standard
   graphical-session.target ([#1281][1281]).
-* If `$XDG_RUNTIME_DIR/foot-$WAYLAND_DISPLAY.sock` does not exist,
-  `footclient` now tries `$XDG_RUNTIME_DIR/foot.sock`, then
-  `/tmp/foot.sock`, even if `$WAYLAND_DISPLAY` and/or
+* If `$XDG_RUNTIME_DIR/boot-$WAYLAND_DISPLAY.sock` does not exist,
+  `bootclient` now tries `$XDG_RUNTIME_DIR/boot.sock`, then
+  `/tmp/boot.sock`, even if `$WAYLAND_DISPLAY` and/or
   `$XDG_RUNTIME_DIR` are defined ([#1281][1281]).
 * Font baseline calculation: try to center the text within the line,
   instead of anchoring it at the top ([#1302][1302]).
@@ -1593,7 +1593,7 @@
   connected ([#1404][1404]).
 * Crash when _pointer capability_ is removed from a seat, on
   compositors without `cursor-shape-v1 support` ([#1411][1411]).
-* Crash on exit, if the mouse is hovering over the foot window (does
+* Crash on exit, if the mouse is hovering over the boot window (does
   not happen on all compositors)
 * Visual glitches when CSD titlebar is transparent.
 
@@ -1621,11 +1621,11 @@
 * Sixel aspect ratio.
 * Support for the new `fractional-scale-v1` Wayland protocol. This
   brings true fractional scaling to Wayland in general, and with this
-  release, to foot.
+  release, to boot.
 * Support for the new `cursor-shape-v1` Wayland protocol, i.e. server
   side cursor shapes ([#1379][1379]).
 * Support for touchscreen input ([#517][517]).
-* `csd.double-click-to-maximize` option to `foot.ini`. Defaults to
+* `csd.double-click-to-maximize` option to `boot.ini`. Defaults to
   `yes` ([#1293][1293]).
 
 [1379]: https://codeberg.org/dnkl/foot/issues/1379
@@ -1670,7 +1670,7 @@
 * `dpi-aware` now defaults to `no`, and the `auto` value has been
   removed.
 * When using custom cursor colors (`cursor.color` is set in
-  `foot.ini`), the cursor is no longer inverted when the cell is
+  `boot.ini`), the cursor is no longer inverted when the cell is
   selected, or when the cell has the `reverse` (SGR 7) attribute set
   ([#1347][1347]).
 
@@ -1698,9 +1698,9 @@
 * Crash when scrolling after resizing the window with non-zero
   scrolling regions.
 * `XTMODKEYS` state not being reset on a terminal reset.
-* In Gnome dock foot always groups under "foot client".  Change
-  instances of footclient and foot to appear as "foot client" and
-  "foot" respectively. ([#1355][1355]).
+* In Gnome dock boot always groups under "boot client".  Change
+  instances of bootclient and boot to appear as "boot client" and
+  "boot" respectively. ([#1355][1355]).
 * Glitchy rendering when alpha (transparency) is changed between
   opaque and non-opaque at runtime (using OSC-11).
 * Regression: crash when resizing the window when `resize-delay-ms >
@@ -1743,7 +1743,7 @@
 * Support (optional) for utmp logging with libutempter.
 * `kxIN` and `kxOUT` (focus in/out events) to terminfo.
 * `name` capability to `XTGETTCAP`.
-* String values in `foot.ini` may now be quoted. This can be used to
+* String values in `boot.ini` may now be quoted. This can be used to
   set a value to the empty string, for example.
 * Environment variables can now be **unset**, by setting
   `[environment].<variable>=""` (quotes are required) ([#1225][1225]).
@@ -1790,7 +1790,7 @@
 
 ### Fixed
 
-* Crash in `foot --server` on key press, after another `footclient`
+* Crash in `boot --server` on key press, after another `bootclient`
   has terminated very early (for example, by trying to launch a
   non-existing shell/client).
 * Glitchy rendering when scrolling in the scrollback, on compositors
@@ -1880,7 +1880,7 @@
 
 * Compiling against wayland-protocols < 1.25
 * Crash on buggy compositors (GNOME) that sometimes send pointer-enter
-  events with a NULL surface. Foot now ignores these events, and the
+  events with a NULL surface. Boot now ignores these events, and the
   subsequent motion and leave events.
 * Regression: "random" selected empty cells being highlighted as
   selected when they should not.
@@ -1898,13 +1898,13 @@
 
 * XDG activation support when opening URLs ([#1058][1058]).
 * `-Dsystemd-units-dir=<path>` meson command line option.
-* Support for custom environment variables in `foot.ini`
+* Support for custom environment variables in `boot.ini`
   ([#1070][1070]).
 * Support for jumping to previous/next prompt (requires shell
   integration). By default bound to `ctrl`+`shift`+`z` and
   `ctrl`+`shift`+`x` respectively ([#30][30]).
 * `colors.search-box-no-match` and `colors.search-box-match` options
-  to `foot.ini` ([#1112][1112]).
+  to `boot.ini` ([#1112][1112]).
 * Very basic Unicode input mode via the new
   `key-bindings.unicode-input` and `search-bindings.unicode-input` key
   bindings. Note that there is no visual feedback, as the preferred
@@ -1923,7 +1923,7 @@
 ### Changed
 
 * Use `$HOME` instead of `getpwuid()` to retrieve the user's home
-  directory when searching for `foot.ini`.
+  directory when searching for `boot.ini`.
 * HT, VT and FF are no longer stripped when pasting in non-bracketed
   mode ([#1084][1084]).
 * NUL is now stripped when pasting in non-bracketed mode
@@ -1943,7 +1943,7 @@
   ([#1055][1055])
 * IME focus is now tracked independently from keyboard focus.
 * Workaround for buggy compositors (e.g. some versions of GNOME)
-  allowing drag-and-drops even though foot has reported it does not
+  allowing drag-and-drops even though boot has reported it does not
   support the offered mime-types ([#1092][1092]).
 * Keyboard enter/leave events being ignored if there is no keymap
   ([#1097][1097]).
@@ -2010,7 +2010,7 @@
 * UI not refreshing when pasting something into the scrollback search
   box, that does not result in a grid update (for example, when the
   search criteria did not result in any matches) ([#1040][1040]).
-* foot freezing in scrollback search mode, using 100% CPU
+* boot freezing in scrollback search mode, using 100% CPU
   ([#1036][1036], [#1047][1047]).
 * Crash when extending a selection to the next word boundary in
   scrollback search mode ([#1036][1036]).
@@ -2030,7 +2030,7 @@
 * OSC-22 - set xcursor pointer.
 * Add "xterm" as fallback cursor where "text" is not available.
 * `[key-bindings].scrollback-home|end` options.
-* Socket activation for `foot --server` and accompanying systemd unit
+* Socket activation for `boot --server` and accompanying systemd unit
   files
 * Support for re-mapping input, i.e. mapping input to custom escape
   sequences ([#325][325]).
@@ -2038,9 +2038,9 @@
   which allows setting/saving/restoring/querying the keypad mode.
 * Sixel support can be disabled by setting `[tweak].sixel=no`
   ([#950][950]).
-* footclient: `-E,--client-environment` command line option. When
+* bootclient: `-E,--client-environment` command line option. When
   used, the child process in the new terminal instance inherits the
-  environment from the footclient process instead of the server's
+  environment from the bootclient process instead of the server's
   ([#1004][1004]).
 * `[csd].hide-when-maximized=yes|no` option ([#1019][1019]).
 * Scrollback search mode now highlights all matches.
@@ -2048,7 +2048,7 @@
   is similar to `show-urls-launch`, but does not automatically exit
   URL mode after activating an URL ([#964][964]).
 * Support for `CSI > 4 n`, disable _modifyOtherKeys_. Note that since
-  foot only supports level 1 and 2 (and not level 0), this sequence
+  boot only supports level 1 and 2 (and not level 0), this sequence
   does not disable _modifyOtherKeys_ completely, but simply reverts it
   back to level 1 (the default).
 * `-Dtests=false|true` meson command line option. When disabled, test
@@ -2075,8 +2075,8 @@
 * Use circles for rendering light arc box-drawing characters
   ([#988][988]).
 * Example configuration is now installed to
-  `${sysconfdir}/xdg/foot/foot.ini`, typically resolving to
-  `/etc/xdg/foot/foot.ini` ([#1001][1001]).
+  `${sysconfdir}/xdg/boot/boot.ini`, typically resolving to
+  `/etc/xdg/boot/boot.ini` ([#1001][1001]).
 
 [922]: https://codeberg.org/dnkl/foot/issues/922
 [971]: https://codeberg.org/dnkl/foot/issues/971
@@ -2102,7 +2102,7 @@
   ongoing ([#922][922]).
 * Large selections crossing the scrollback wrap-around ([#924][924]).
 * Crash in `pipe-scrollback` ([#926][926]).
-* Exit code being 0 when a foot server with no open windows terminate
+* Exit code being 0 when a boot server with no open windows terminate
   due to e.g. a Wayland connection failure ([#943][943]).
 * Key binding collisions not detected for bindings specified as option
   overrides on the command line.
@@ -2121,7 +2121,7 @@
 * Window size "jumping" when starting an interactive resize when CSDs
   are enabled, and CSD border width set to a non-zero value.
 * Key binding overrides on the command line having no effect with
-  `footclient` instances ([#931][931]).
+  `bootclient` instances ([#931][931]).
 * Search prev/next not updating the selection correctly when the
   previous and new match overlaps.
 * Various minor fixes to scrollback search, and how it finds the
@@ -2190,8 +2190,8 @@
 * The width of the block cursor's outline in an unfocused window is
   now scaled by the output scaling factor ("desktop
   scaling"). Previously, it was always 1px.
-* Foot will now try to change the locale to either "C.UTF-8" or
-  "en_US.UTF-8" if started with a non-UTF8 locale. If this fails, foot
+* Boot will now try to change the locale to either "C.UTF-8" or
+  "en_US.UTF-8" if started with a non-UTF8 locale. If this fails, boot
   will start, but only to display a window with an error (user's shell
   is not executed).
 * `gettimeofday()` has been replaced with `clock_gettime()`, due to it being
@@ -2202,7 +2202,7 @@
   ([#379](https://codeberg.org/dnkl/foot/issues/379)).
 * Line-based selections now include a trailing newline when copied
   ([#869](https://codeberg.org/dnkl/foot/issues/869)).
-* Foot now clears the signal mask and resets all signal handlers to
+* Boot now clears the signal mask and resets all signal handlers to
   their default handlers at startup
   ([#854](https://codeberg.org/dnkl/foot/issues/854)).
 * `Copy` and `Paste` keycodes are supported by default for the
@@ -2213,7 +2213,7 @@
 
 ### Removed
 
-* Workaround for slow resize in Sway <= 1.5, when a foot window was
+* Workaround for slow resize in Sway <= 1.5, when a boot window was
   hidden, for example, in a tabbed view
   (https://codeberg.org/dnkl/foot/pulls/507).
 
@@ -2326,7 +2326,7 @@
 
 * `-Dthemes=false|true` meson command line option. When disabled,
   example theme files are **not** installed.
-* XDG desktop file for footclient.
+* XDG desktop file for bootclient.
 
 
 ### Fixed
@@ -2362,7 +2362,7 @@
 * `[key-bindings].noop` action. Key combinations assigned to this
   action will not be sent to the application
   ([#765](https://codeberg.org/dnkl/foot/issues/765)).
-* Color schemes are now installed to `${datadir}/foot/themes`.
+* Color schemes are now installed to `${datadir}/boot/themes`.
 * `[csd].border-width` and `[csd].border-color`, allowing you to
   configure the width and color of the CSD border.
 * Support for `XTMODKEYS` with `Pp=4` and `Pv=2` (_modifyOtherKeys=2_).
@@ -2372,16 +2372,16 @@
 
 ### Changed
 
-* `[tweak].grapheme-shaping` is now enabled by default when both foot
+* `[tweak].grapheme-shaping` is now enabled by default when both boot
   itself, and fcft has been compiled with support for it.
 * Default value of `[tweak].grapheme-width-method` changed from
   `double-width` to `wcswidth`.
 * INSTALL.md: `--override tweak.grapheme-shaping=no` added to PGO
   command line.
-* Foot now terminates if there are no available seats - for example,
+* Boot now terminates if there are no available seats - for example,
   due to the compositor not implementing a recent enough version of
   the `wl_seat` interface ([#779](https://codeberg.org/dnkl/foot/issues/779)).
-* Boolean options in `foot.ini` are now limited to
+* Boolean options in `boot.ini` are now limited to
   "yes|true|on|1|no|false|off|0", Previously, anything that did not
   match "yes|true|on", or a number greater than 0, was treated as
   "false".
@@ -2400,7 +2400,7 @@
 ### Fixed
 
 * 'Sticky' modifiers in input handling; when determining modifier
-  state, foot was looking at **depressed** modifiers, not
+  state, boot was looking at **depressed** modifiers, not
   **effective** modifiers, like it should.
 * Fix crashes after enabling CSD at runtime when `csd.size` is 0.
 * Convert `\r` to `\n` when reading clipboard data
@@ -2442,7 +2442,7 @@
 * PGO build scripts, in the `pgo` directory. See INSTALL.md -
   _Performance optimized, PGO_, for details
   ([#701](https://codeberg.org/dnkl/foot/issues/701)).
-* Braille characters (U+2800 - U+28FF) are now rendered by foot
+* Braille characters (U+2800 - U+28FF) are now rendered by boot
   itself ([#702](https://codeberg.org/dnkl/foot/issues/702)).
 * `-e` command-line option. This option is simply ignored, to appease
   program launchers that blindly pass `-e` to any terminal emulator
@@ -2490,25 +2490,25 @@
 * Support for `~`-expansion in the `include` directive
   ([#659](https://codeberg.org/dnkl/foot/issues/659)).
 * Unicode 13 characters U+1FB3C - U+1FB6F, U+1FB9A and U+1FB9B to list
-  of box drawing characters rendered by foot itself (rather than using
+  of box drawing characters rendered by boot itself (rather than using
   font glyphs) ([#474](https://codeberg.org/dnkl/foot/issues/474)).
 * `XM`+`xm` to terminfo.
 * Mouse buttons 6/7 (mouse wheel left/right).
-* `url.uri-characters` option to `foot.ini`
+* `url.uri-characters` option to `boot.ini`
   ([#654](https://codeberg.org/dnkl/foot/issues/654)).
 
 
 ### Changed
 
-* Terminfo files can now co-exist with the foot terminfo files from
+* Terminfo files can now co-exist with the boot terminfo files from
   ncurses. See `INSTALL.md` for more information
   ([#671](https://codeberg.org/dnkl/foot/issues/671)).
 * `bold-text-in-bright=palette-based` now only brightens colors from palette
 * Raised grace period between closing the PTY and sending `SIGKILL` (when
   terminating the client application) from 4 to 60 seconds.
-* When terminating the client application, foot now sends `SIGTERM` immediately
+* When terminating the client application, boot now sends `SIGTERM` immediately
   after closing the PTY, instead of waiting 2 seconds.
-* Foot now sends `SIGTERM`/`SIGKILL` to the client application's process group,
+* Boot now sends `SIGTERM`/`SIGKILL` to the client application's process group,
   instead of just to the client application's process.
 * `kmous` terminfo capability from `\E[M` to `\E[<`.
 * pt-or-px values (`letter-spacing`, etc) and the line thickness
@@ -2522,13 +2522,13 @@
 
 ### Removed
 
-* `km`/`smm`/`rmm` from terminfo; foot prefixes Alt-key combinations
+* `km`/`smm`/`rmm` from terminfo; boot prefixes Alt-key combinations
   with `ESC`, and not by setting the 8:th "meta" bit, regardless of
   `smm`/`rmm`. While this _can_ be disabled by, resetting private mode
   1036, the terminfo should reflect the **default** behavior
   ([#670](https://codeberg.org/dnkl/foot/issues/670)).
 * Keypad application mode keys from terminfo; enabling the keypad
-  application mode is not enough to make foot emit these sequences -
+  application mode is not enough to make boot emit these sequences -
   you also need to disable private mode 1035
   ([#670](https://codeberg.org/dnkl/foot/issues/670)).
 
@@ -2541,12 +2541,12 @@
 * Crash in scrollback search mode when selection has been canceled due
   to terminal content updates
   ([#644](https://codeberg.org/dnkl/foot/issues/644)).
-* Foot process not terminating when the Wayland connection is broken
+* Boot process not terminating when the Wayland connection is broken
   ([#651](https://codeberg.org/dnkl/foot/issues/651)).
 * Output scale being zero on compositors that does not advertise a
   scaling factor.
-* Slow-to-terminate client applications causing other footclient instances to
-  freeze when closing a footclient window.
+* Slow-to-terminate client applications causing other bootclient instances to
+  freeze when closing a bootclient window.
 * Underlying cell content showing through in the left-most column of
   sixels.
 * `cursor.blink` not working in GNOME
@@ -2567,7 +2567,7 @@
 
 ### Added
 
-* `locked-title=no|yes` to `foot.ini`
+* `locked-title=no|yes` to `boot.ini`
   ([#386](https://codeberg.org/dnkl/foot/issues/386)).
 * `tweak.overflowing-glyphs` option, which can be enabled to fix rendering
   issues with glyphs of any width that appear cut-off
@@ -2619,7 +2619,7 @@
 ### Added
 
 * `--log-level=none` command-line option.
-* `Tc`, `setrgbf` and `setrgbb` capabilities in `foot` and `foot-direct`
+* `Tc`, `setrgbf` and `setrgbb` capabilities in `boot` and `boot-direct`
   terminfo entries. This should make 24-bit RGB colors work in tmux and
   neovim, without the need for config hacks or detection heuristics
   ([#615](https://codeberg.org/dnkl/foot/issues/615)).
@@ -2630,7 +2630,7 @@
 * Grapheme cluster width is now limited to two cells by default. This
   may cause cursor synchronization issues with many applications. You
   can set `[tweak].grapheme-width-method=wcswidth` to revert to the
-  behavior in foot-1.8.0.
+  behavior in boot-1.8.0.
 
 
 ### Fixed
@@ -2662,7 +2662,7 @@ consists of 4 codepoints (_Woman_ + _Medium skin tone_ + _Zero width
 joiner_ + _Rocket_). The goal is to _cluster_ codepoints belonging to
 the same grapheme in the same cell in the terminal.
 
-Previous versions of foot implemented a simple grapheme cluster
+Previous versions of boot implemented a simple grapheme cluster
 segmentation technique that **only** handled zero-width
 codepoints. This allowed us to cluster combining characters, like q́
 (_q_ + _COMBINING ACUTE ACCENT_).
@@ -2671,10 +2671,10 @@ Once we have a grapheme cluster, we need to _shape_ it.
 
 Combining characters are simple: they are typically rendered as
 multiple glyphs layered on top of each other. This is why previous
-versions of foot got away with it without any actual text shaping
+versions of boot got away with it without any actual text shaping
 support.
 
-Beyond that, support from the font library is needed. Foot now depends
+Beyond that, support from the font library is needed. Boot now depends
 on fcft-2.4, which added support for grapheme and text shaping. When
 rendering a cell, we ask the font library: give us the glyph(s) for
 this sequence of codepoints.
@@ -2685,27 +2685,27 @@ segmentation means **improved correctness**.
 For full support, the following is required:
 
 * fcft compiled with HarfBuzz support
-* foot compiled with libutf8proc support
-* `tweak.grapheme-shaping=yes` in `foot.ini`
+* boot compiled with libutf8proc support
+* `tweak.grapheme-shaping=yes` in `boot.ini`
 
-If `tweak.grapheme-shaping` has **not** been enabled, foot will
+If `tweak.grapheme-shaping` has **not** been enabled, boot will
 neither use libutf8proc to do grapheme cluster segmentation, nor will
 it use fcft's grapheme shaping capabilities to shape combining
 characters.
 
 This feature is _experimental_ mostly due to the "wcwidth" problem;
-how many cells should foot allocate for a grapheme cluster? While the
+how many cells should boot allocate for a grapheme cluster? While the
 answer may seem simple, the problem is that, whatever the answer is,
 the client application **must** come up with the **same**
 answer. Otherwise we get cursor synchronization issues.
 
-In this release, foot simply adds together the `wcwidth()` of all
+In this release, boot simply adds together the `wcwidth()` of all
 codepoints in the grapheme cluster. This is equivalent to running
 `wcswidth()` on the entire cluster. **This is likely to change in the
 future**.
 
 Finally, note that grapheme shaping is not the same thing as text (or
-text run) shaping. In this version, foot only shapes individual
+text run) shaping. In this version, boot only shapes individual
 graphemes, not entire text runs. That means e.g. ligatures are **not**
 supported.
 
@@ -2715,31 +2715,31 @@ supported.
 * Support for DECSET/DECRST 2026, as an alternative to the existing
   "synchronized updates" DCS sequences
   ([#459](https://codeberg.org/dnkl/foot/issues/459)).
-* `cursor.beam-thickness` option to `foot.ini`
+* `cursor.beam-thickness` option to `boot.ini`
   ([#464](https://codeberg.org/dnkl/foot/issues/464)).
-* `cursor.underline-thickness` option to `foot.ini`
+* `cursor.underline-thickness` option to `boot.ini`
   ([#524](https://codeberg.org/dnkl/foot/issues/524)).
 * Unicode 13 characters U+1FB70 - U+1FB8B to list of box drawing
-  characters rendered by foot itself (rather than using font glyphs)
+  characters rendered by boot itself (rather than using font glyphs)
   ([#471](https://codeberg.org/dnkl/foot/issues/471)).
 * Dedicated `[bell]` section to config, supporting multiple actions
   and a new `command` action to run an arbitrary command.
   (https://codeberg.org/dnkl/foot/pulls/483)
 * Dedicated `[url]` section to config.
-* `[url].protocols` option to `foot.ini`
+* `[url].protocols` option to `boot.ini`
   ([#531](https://codeberg.org/dnkl/foot/issues/531)).
-* Support for setting the full 256 color palette in foot.ini
+* Support for setting the full 256 color palette in boot.ini
   ([#489](https://codeberg.org/dnkl/foot/issues/489))
 * XDG activation support, will be used by `[bell].urgent` when
   available (falling back to coloring the window margins red when
   unavailable) ([#487](https://codeberg.org/dnkl/foot/issues/487)).
 * `ctrl`+`c` as a default key binding; to cancel search/url mode.
 * `${window-title}` to `notify`.
-* Support for including files in `foot.ini`
+* Support for including files in `boot.ini`
   ([#555](https://codeberg.org/dnkl/foot/issues/555)).
-* `ENVIRONMENT` section in **foot**(1) and **footclient**(1) man pages
+* `ENVIRONMENT` section in **boot**(1) and **bootclient**(1) man pages
   ([#556](https://codeberg.org/dnkl/foot/issues/556)).
-* `tweak.pua-double-width` option to `foot.ini`, letting you force
+* `tweak.pua-double-width` option to `boot.ini`, letting you force
   _Private Usage Area_ codepoints to be treated as double-width
   characters.
 * OSC 9 desktop notifications (iTerm2 compatible).
@@ -2748,9 +2748,9 @@ supported.
 * Support for overriding configuration options on the command line
   ([#554](https://codeberg.org/dnkl/foot/issues/554),
   [#600](https://codeberg.org/dnkl/foot/issues/600)).
-* `underline-offset` option to `foot.ini`
+* `underline-offset` option to `boot.ini`
   ([#490](https://codeberg.org/dnkl/foot/issues/490)).
-* `csd.button-color` option to `foot.ini`.
+* `csd.button-color` option to `boot.ini`.
 * `-Dterminfo-install-location=disabled|<custom-path>` meson command
   line option ([#569](https://codeberg.org/dnkl/foot/issues/569)).
 
@@ -2771,10 +2771,10 @@ supported.
 * Point values in `line-height`, `letter-spacing`,
   `horizontal-letter-offset` and `vertical-letter-offset` are now
   rounded, not truncated, when translated to pixel values.
-* Foot's exit code is now -26/230 when foot itself failed to launch
+* Boot's exit code is now -26/230 when boot itself failed to launch
   (due to invalid command line options, client application/shell not
-  found etc). Footclient's exit code is -36/220 when it itself fails
-  to launch (e.g. bad command line option) and -26/230 when the foot
+  found etc). Bootclient's exit code is -36/220 when it itself fails
+  to launch (e.g. bad command line option) and -26/230 when the boot
   server failed to instantiate a new window
   ([#466](https://codeberg.org/dnkl/foot/issues/466)).
 * Background alpha no longer applied to palette or RGB colors that
@@ -2786,7 +2786,7 @@ supported.
   ([#421](https://codeberg.org/dnkl/foot/issues/421)).
 * Ignore auto-detected URLs that overlap with OSC-8 URLs.
 * Default value for the `notify` option to use `-a ${app-id} -i
-  ${app-id} ...` instead of `-a foot -i foot ...`.
+  ${app-id} ...` instead of `-a boot -i boot ...`.
 * `scrollback-*`+`pipe-scrollback` key bindings are now passed through
   to the client application when the alt screen is active
   ([#573](https://codeberg.org/dnkl/foot/issues/573)).
@@ -2798,20 +2798,20 @@ supported.
 * Writing a sixel on top of another sixel no longer erases the first
   sixel, but the two are instead blended
   ([#562](https://codeberg.org/dnkl/foot/issues/562)).
-* Running foot without a configuration file is no longer an error; it
+* Running boot without a configuration file is no longer an error; it
   has been demoted to a warning, and is no longer presented as a
   notification in the terminal window, but only logged on stderr.
 
 
 ### Deprecated
 
-* `bell` option in `foot.ini`; set actions in the `[bell]` section
+* `bell` option in `boot.ini`; set actions in the `[bell]` section
   instead.
-* `url-launch` option in `foot.ini`; use `launch` in the `[url]`
+* `url-launch` option in `boot.ini`; use `launch` in the `[url]`
   section instead.
-* `jump-label-letters` option in `foot.ini`; use `label-letters` in
+* `jump-label-letters` option in `boot.ini`; use `label-letters` in
   the `[url]` section instead.
-* `osc8-underline` option in `foot.ini`; use `osc8-underline` in the
+* `osc8-underline` option in `boot.ini`; use `osc8-underline` in the
   `[url]` section instead.
 
 
@@ -2844,8 +2844,8 @@ supported.
 * Rare occurrences where the window did not close when the shell
   exited. Only seen on FreeBSD
   ([#534](https://codeberg.org/dnkl/foot/issues/534))
-* Foot process(es) sometimes remaining, using 100% CPU, when closing
-  multiple foot windows at the same time
+* Boot process(es) sometimes remaining, using 100% CPU, when closing
+  multiple boot windows at the same time
   ([#542](https://codeberg.org/dnkl/foot/issues/542)).
 * Regression where `<mod>+shift+tab` always produced `\E[Z` instead of
   the correct `\E[27;<mod>;9~` sequence
@@ -2866,7 +2866,7 @@ supported.
 * `TEXT`+`STRING`+`UTF8_STRING` mime types not being recognized in
   clipboard offers ([#583](https://codeberg.org/dnkl/foot/issues/583)).
 * Memory leak caused by custom box drawing glyphs not being completely
-  freed when destroying a foot window instance
+  freed when destroying a boot window instance
   ([#586](https://codeberg.org/dnkl/foot/issues/586)).
 * Crash in scrollback search when current XKB layout is missing
   _compose_ definitions.
@@ -2889,7 +2889,7 @@ supported.
   ([#436](https://codeberg.org/dnkl/foot/issues/436)).
 * OSC 17/117/19/119 - change/reset selection background/foreground
   color.
-* `box-drawings-uses-font-glyphs=yes|no` option to `foot.ini`
+* `box-drawings-uses-font-glyphs=yes|no` option to `boot.ini`
   ([#430](https://codeberg.org/dnkl/foot/issues/430)).
 
 
@@ -2897,7 +2897,7 @@ supported.
 
 * Underline cursor is now rendered below text underline
   ([#415](https://codeberg.org/dnkl/foot/issues/415)).
-* Foot now tries much harder to keep URL jump labels inside the window
+* Boot now tries much harder to keep URL jump labels inside the window
   geometry ([#443](https://codeberg.org/dnkl/foot/issues/443)).
 * `bold-text-in-bright` may now be set to `palette-based`, in which
   case it will use the corresponding bright palette color when the
@@ -2916,7 +2916,7 @@ supported.
 * Wrong action referenced in error message for key binding collisions
   ([#432](https://codeberg.org/dnkl/foot/issues/432)).
 * OSC 4/104 out-of-bounds accesses to the color table. This was the
-  reason pywal turned foot windows transparent
+  reason pywal turned boot windows transparent
   ([#434](https://codeberg.org/dnkl/foot/issues/434)).
 * PTY not being drained when the client application terminates.
 * `auto_left_margin` not being limited to `cub1`
@@ -2966,19 +2966,19 @@ supported.
   window, with equal amount of padding of the left/right and
   top/bottom side ([#273](https://codeberg.org/dnkl/foot/issues/273)).
 * `line-height`, `letter-spacing`, `horizontal-letter-offset` and
-  `vertical-letter-offset` to `foot.ini`. These options let you tweak
+  `vertical-letter-offset` to `boot.ini`. These options let you tweak
   cell size and glyph positioning
   ([#244](https://codeberg.org/dnkl/foot/issues/244)).
 * Key/mouse binding `select-extend-character-wise`, which forces the
   selection mode to 'character-wise' when extending a selection.
 * `DECSET` `47`, `1047` and `1048`.
 * URL detection and OSC-8 support. URLs are highlighted and activated
-  using the keyboard (**no** mouse support). See **foot**(1)::URLs, or
+  using the keyboard (**no** mouse support). See **boot**(1)::URLs, or
   [README.md](README.md#urls) for details
   ([#14](https://codeberg.org/dnkl/foot/issues/14)).
-* `-d,--log-level={info|warning|error}` to both `foot` and
-  `footclient` ([#337](https://codeberg.org/dnkl/foot/issues/337)).
-* `-D,--working-directory=DIR` to both `foot` and `footclient`
+* `-d,--log-level={info|warning|error}` to both `boot` and
+  `bootclient` ([#337](https://codeberg.org/dnkl/foot/issues/337)).
+* `-D,--working-directory=DIR` to both `boot` and `bootclient`
   ([#347](https://codeberg.org/dnkl/foot/issues/347))
 * `DECSET 80` - sixel scrolling
   ([#361](https://codeberg.org/dnkl/foot/issues/361)).
@@ -2986,16 +2986,16 @@ supported.
   ([#362](https://codeberg.org/dnkl/foot/issues/362)).
 * `DECSET 8452` - position cursor to the right of sixels
   ([#363](https://codeberg.org/dnkl/foot/issues/363)).
-* Man page **foot-ctlseqs**(7), documenting all supported escape
+* Man page **boot-ctlseqs**(7), documenting all supported escape
   sequences ([#235](https://codeberg.org/dnkl/foot/issues/235)).
 * Support for transparent sixels (DCS parameter `P2=1`)
   ([#391](https://codeberg.org/dnkl/foot/issues/391)).
-* `-N,--no-wait` to `footclient`
+* `-N,--no-wait` to `bootclient`
   ([#395](https://codeberg.org/dnkl/foot/issues/395)).
 * Completions for Bash shell
   ([#10](https://codeberg.org/dnkl/foot/issues/10)).
-* Implement `XTVERSION` (`CSI > 0q`). Foot will reply with
-  `DCS>|foot(<major>.<minor>.<patch>)ST`
+* Implement `XTVERSION` (`CSI > 0q`). Boot will reply with
+  `DCS>|boot(<major>.<minor>.<patch>)ST`
   ([#359](https://codeberg.org/dnkl/foot/issues/359)).
 
 
@@ -3004,7 +3004,7 @@ supported.
 * The fcft and tllist library subprojects are now handled via Meson
   [wrap files](https://mesonbuild.com/Wrap-dependency-system-manual.html)
   instead of needing to be manually cloned.
-* Box drawing characters are now rendered by foot, instead of using
+* Box drawing characters are now rendered by boot, instead of using
   font glyphs ([#198](https://codeberg.org/dnkl/foot/issues/198))
 * Double- or triple clicking then dragging now extends the selection
   word- or line-wise ([#267](https://codeberg.org/dnkl/foot/issues/267)).
@@ -3012,7 +3012,7 @@ supported.
   size ([#281](https://codeberg.org/dnkl/foot/issues/281)).
 * Extending a word/line-wise selection now uses the original selection
   mode instead of switching to character-wise.
-* While doing an interactive resize of a foot window, foot now
+* While doing an interactive resize of a boot window, boot now
   requires 100ms of idle time (where the window size does not change)
   before sending the new dimensions to the client application. The
   timing can be tweaked, or completely disabled, by setting
@@ -3049,7 +3049,7 @@ supported.
   application.
 * Terminals spawned with `ctrl`+`shift`+`n` not terminating when
   exiting shell ([#366](https://codeberg.org/dnkl/foot/issues/366)).
-* Default value of `-t,--term` in `--help` output when foot was built
+* Default value of `-t,--term` in `--help` output when boot was built
   without terminfo support.
 * Drain PTY when the client application terminates.
 
@@ -3066,10 +3066,10 @@ supported.
 
 ### Added
 
-* `selection-target=none|primary|clipboard|both` to `foot.ini`. It can
+* `selection-target=none|primary|clipboard|both` to `boot.ini`. It can
   be used to configure which clipboard(s) selected text should be
   copied to. The default is `primary`, which corresponds to the
-  behavior in older foot releases
+  behavior in older boot releases
   ([#288](https://codeberg.org/dnkl/foot/issues/288)).
 
 
@@ -3079,7 +3079,7 @@ supported.
   away during preedit.
 * `-Dterminfo` changed from a `boolean` to a `feature` option.
 * Use standard signals instead of a signalfd to handle
-  `SIGCHLD`. Fixes an issue on FreeBSD where foot did not detect when
+  `SIGCHLD`. Fixes an issue on FreeBSD where boot did not detect when
   the client application had terminated.
 
 
@@ -3101,13 +3101,13 @@ supported.
 * Completions for fish shell
   ([#11](https://codeberg.org/dnkl/foot/issues/11))
 * FreeBSD support ([#238](https://codeberg.org/dnkl/foot/issues/238)).
-* IME popup location support: foot now sends the location of the cursor
+* IME popup location support: boot now sends the location of the cursor
   so any popup can be displayed near the text that is being typed.
 
 
 ### Changed
 
-* Trailing comments in `foot.ini` must now be preceded by a space or tab
+* Trailing comments in `boot.ini` must now be preceded by a space or tab
   ([#270](https://codeberg.org/dnkl/foot/issues/270))
 * The scrollback search box no longer accepts non-printable characters.
 * Non-formatting C0 control characters, `BS`, `HT` and `DEL` are now
@@ -3192,9 +3192,9 @@ supported.
 
 ### For packagers
 
-Starting with this release, foot can be PGO:d (compiled using profile
+Starting with this release, boot can be PGO:d (compiled using profile
 guided optimizations) **without** a running Wayland session. This
-means foot can be PGO:d in e.g. sandboxed build scripts. See
+means boot can be PGO:d in e.g. sandboxed build scripts. See
 [INSTALL.md](INSTALL.md#user-content-performance-optimized-pgo).
 
 
@@ -3206,7 +3206,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 * `DECSET` escape to enable/disable IME: `CSI ? 737769 h` enables IME
   and `CSI ? 737769 l` disables it. This can be used to
   e.g. enable/disable IME when entering/leaving insert mode in vim.
-* `dpi-aware` option to `foot.ini`. The default, `auto`, sizes fonts
+* `dpi-aware` option to `boot.ini`. The default, `auto`, sizes fonts
   using the monitor's DPI when output scaling has been
   **disabled**. If output scaling has been **enabled**, fonts are
   sized using the scaling factor. DPI-only font sizing can be forced
@@ -3217,8 +3217,8 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   terminfo). This mode can be enabled/disabled with `CSI ? 45 h` and
   `CSI ? 45 l`. It is **enabled** by default
   ([#150](https://codeberg.org/dnkl/foot/issues/150)).
-* `bell` option to `foot.ini`. Can be set to `set-urgency` to make
-  foot render the margins in red when receiving `BEL` while **not**
+* `bell` option to `boot.ini`. Can be set to `set-urgency` to make
+  boot render the margins in red when receiving `BEL` while **not**
   having keyboard focus. Applications can dynamically enable/disable
   this with the `CSI ? 1042 h` and `CSI ? 1042 l` escape
   sequences. Note that Wayland does **not** implement an _urgency_
@@ -3228,9 +3228,9 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   forward-compatibility, in the hopes that this proposal eventualizes
   ([#157](https://codeberg.org/dnkl/foot/issues/157)).
 * `bell` option can also be set to `notify`, in which case a desktop
-  notification is emitted when foot receives `BEL` in an unfocused
+  notification is emitted when boot receives `BEL` in an unfocused
   window.
-* `word-delimiters` option to `foot.ini`
+* `word-delimiters` option to `boot.ini`
   ([#156](https://codeberg.org/dnkl/foot/issues/156)).
 * `csd.preferred` can now be set to `none` to disable window
   decorations. Note that some compositors will render SSDs despite
@@ -3239,11 +3239,11 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   below the window while selecting
   ([#149](https://codeberg.org/dnkl/foot/issues/149)).
 * `font-bold`, `font-italic` `font-bold-italic` options to
-  `foot.ini`. These options allow custom bold/italic fonts. They are
+  `boot.ini`. These options allow custom bold/italic fonts. They are
   unset by default, meaning the bold/italic version of the regular
   font is used ([#169](https://codeberg.org/dnkl/foot/issues/169)).
 * Drag & drop support; text, files and URLs can now be dropped in a
-  foot terminal window ([#175](https://codeberg.org/dnkl/foot/issues/175)).
+  boot terminal window ([#175](https://codeberg.org/dnkl/foot/issues/175)).
 * `clipboard-paste` and `primary-paste` scrollback search bindings. By
   default, they are bound to `ctrl+v ctrl+y` and `shift+insert`
   respectively, and lets you paste from the clipboard or primary
@@ -3252,18 +3252,18 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   not possible to add a command to these actions when used in mouse
   bindings, making them useless
   ([#183](https://codeberg.org/dnkl/foot/issues/183)).
-* `bold-text-in-bright` option to `foot.ini`. When enabled, bold text
+* `bold-text-in-bright` option to `boot.ini`. When enabled, bold text
   is rendered in a brighter color
   ([#199](https://codeberg.org/dnkl/foot/issues/199)).
 * `-w,--window-size-pixels` and `-W,--window-size-chars` command line
-  options to `footclient` ([#189](https://codeberg.org/dnkl/foot/issues/189)).
+  options to `bootclient` ([#189](https://codeberg.org/dnkl/foot/issues/189)).
 * Short command line options for `--title`, `--maximized`,
   `--fullscreen`, `--login-shell`, `--hold` and `--check-config`.
 * `DECSET` escape to modify the `escape` key to send `\E[27;1;27~`
   instead of `\E`: `CSI ? 27127 h` enables the new behavior, `CSI ?
   27127 l` disables it (the default).
 * OSC 777;notify: desktop notifications. Use in combination with the
-  new `notify` option in `foot.ini`
+  new `notify` option in `boot.ini`
   ([#224](https://codeberg.org/dnkl/foot/issues/224)).
 * Status line terminfo capabilities `hs`, `tsl`, `fsl` and `dsl`. This
   enables e.g. vim to set the window title
@@ -3280,14 +3280,14 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   fullscreen application, i.e. the 'alt' screen
   ([#221](https://codeberg.org/dnkl/foot/issues/221)).
 * Cursor will now blink if **either** `CSI ? 12 h` or `CSI Ps SP q`
-  has been used to enable blinking. **cursor.blink** in `foot.ini`
+  has been used to enable blinking. **cursor.blink** in `boot.ini`
   controls the default state of `CSI Ps SP q`
   ([#218](https://codeberg.org/dnkl/foot/issues/218)).
 * The sub-parameter versions of the SGR RGB color escapes (e.g
   `\E[38:2...m`) can now be used _without_ the color space ID
   parameter.
 * SGR 21 no longer disables **bold**. According to ECMA-48, SGR 21 is
-  _"double underline_". Foot does not (yet) implement that, but that's
+  _"double underline_". Boot does not (yet) implement that, but that's
   no reason to implement a non-standard behavior.
 * `DECRQM` now returns actual state of the requested mode, instead of
   always returning `2`.
@@ -3295,9 +3295,9 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Removed
 
-* Support for loading configuration from `$XDG_CONFIG_HOME/footrc`.
-* `scrollback` option from `foot.ini`.
-* `geometry` from `foot.ini`.
+* Support for loading configuration from `$XDG_CONFIG_HOME/bootrc`.
+* `scrollback` option from `boot.ini`.
+* `geometry` from `boot.ini`.
 * Key binding action `scrollback-up` and `scrollback-down`.
 
 
@@ -3330,7 +3330,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 
 * Num Lock by default overrides the keypad mode. See
-  **foot.ini**(5)::KEYPAD, or
+  **boot.ini**(5)::KEYPAD, or
   [README.md](README.md#user-content-keypad) for details
   ([#194](https://codeberg.org/dnkl/foot/issues/194)).
 * Single-width characters with double-width glyphs are now allowed to
@@ -3345,7 +3345,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 * Key mappings for key combinations with `shift`+`tab`
   ([#210](https://codeberg.org/dnkl/foot/issues/210)).
 * Key mappings for key combinations with `alt`+`return`.
-* `footclient` `-m` (`--maximized`) flag being ignored.
+* `bootclient` `-m` (`--maximized`) flag being ignored.
 * Crash with explicitly sized sixels with a height less than 6 pixels.
 * Key mappings for `esc` with modifiers.
 
@@ -3360,7 +3360,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 ### Fixed
 
 * Crash when libxkbcommon cannot find a suitable libX11 _compose_
-  file. Note that foot will run, but without support for dead keys.
+  file. Note that boot will run, but without support for dead keys.
   ([#170](https://codeberg.org/dnkl/foot/issues/170)).
 * Restored window size when window is un-tiled.
 * XCursor shape in CSD corners when window is tiled.
@@ -3387,7 +3387,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Changed
 
-* Default value of the **scrollback.multiplier** option in `foot.ini`
+* Default value of the **scrollback.multiplier** option in `boot.ini`
   from `1.0` to `3.0`.
 * `shift`+`insert` now pastes from the primary selection by
   default. This is in addition to middle-clicking with the mouse.
@@ -3405,10 +3405,10 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   ([#142](https://codeberg.org/dnkl/foot/issues/142)).
 * Trackpad scrolling speed to better match the mouse scrolling speed,
   and to be consistent with other (Wayland) terminal emulators. Note
-  that it is (much) slower compared to previous foot versions. Use the
-  **scrollback.multiplier** option in `foot.ini` if you find the new
+  that it is (much) slower compared to previous boot versions. Use the
+  **scrollback.multiplier** option in `boot.ini` if you find the new
   speed too slow ([#144](https://codeberg.org/dnkl/foot/issues/144)).
-* Crash when `foot.ini` contains an invalid section name
+* Crash when `boot.ini` contains an invalid section name
   ([#159](https://codeberg.org/dnkl/foot/issues/159)).
 * Background opacity when in _reverse video_ mode.
 * Crash when writing a sixel image that extends outside the terminal's
@@ -3432,9 +3432,9 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Deprecated
 
-* `$XDG_CONFIG_HOME/footrc`/`~/.config/footrc`. Use
-  `$XDG_CONFIG_HOME/foot/foot.ini`/`~/.config/foot/foot.ini` instead.
-* **scrollback** option in `foot.ini`. Use **scrollback.lines**
+* `$XDG_CONFIG_HOME/bootrc`/`~/.config/bootrc`. Use
+  `$XDG_CONFIG_HOME/boot/boot.ini`/`~/.config/boot/boot.ini` instead.
+* **scrollback** option in `boot.ini`. Use **scrollback.lines**
   instead.
 * **scrollback-up** key binding. Use **scrollback-up-page** instead.
 * **scrollback-down** key binding. Use **scrollback-down-page**
@@ -3445,19 +3445,19 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 * Scrollback position indicator. This feature is optional and
   controlled by the **scrollback.indicator-position** and
-  **scrollback.indicator-format** options in `foot.ini`
+  **scrollback.indicator-format** options in `boot.ini`
   ([#42](https://codeberg.org/dnkl/foot/issues/42)).
 * Key bindings in _scrollback search_ mode are now configurable.
 * `--check-config` command line option.
 * **pipe-selected** key binding. Works like **pipe-visible** and
   **pipe-scrollback**, but only pipes the currently selected text, if
   any ([#51](https://codeberg.org/dnkl/foot/issues/51)).
-* **mouse.hide-when-typing** option to `foot.ini`.
-* **scrollback.multiplier** option to `foot.ini`
+* **mouse.hide-when-typing** option to `boot.ini`.
+* **scrollback.multiplier** option to `boot.ini`
   ([#54](https://codeberg.org/dnkl/foot/issues/54)).
 * **colors.selection-foreground** and **colors.selection-background**
-  options to `foot.ini`.
-* **tweak.render-timer** option to `foot.ini`.
+  options to `boot.ini`.
+* **tweak.render-timer** option to `boot.ini`.
 * Modifier support in mouse bindings
   ([#77](https://codeberg.org/dnkl/foot/issues/77)).
 * Click count support in mouse bindings, i.e double- and triple-click
@@ -3466,7 +3466,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   now configurable, via the new **select-begin**,
   **select-begin-block**, **select-extend**, **select-word**,
   **select-word-whitespace** and **select-row** options in the
-  **mouse-bindings** section in `foot.ini`
+  **mouse-bindings** section in `boot.ini`
   ([#79](https://codeberg.org/dnkl/foot/issues/79)).
 * Implement XTSAVE/XTRESTORE escape sequences, `CSI ? Ps s` and `CSI ?
   Ps r` ([#91](https://codeberg.org/dnkl/foot/issues/91)).
@@ -3476,12 +3476,12 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   character width of 1. Must be explicitly enabled with
   `tweak.allow-overflowing-double-width-glyphs`
   ([#116](https://codeberg.org/dnkl/foot/issues/116)).
-* **initial-window-size-pixels** options to `foot.ini` and
-  `-w,--window-size-pixels` command line option to `foot`. This option
+* **initial-window-size-pixels** options to `boot.ini` and
+  `-w,--window-size-pixels` command line option to `boot`. This option
   replaces the now deprecated **geometry** and `-g,--geometry`
   options.
-* **initial-window-size-chars** option to `foot.ini` and
-  `-W,--window-size-chars` command line option to `foot`. This option
+* **initial-window-size-chars** option to `boot.ini` and
+  `-W,--window-size-chars` command line option to `boot`. This option
   configures the initial window size in **characters**, and is an
   alternative to **initial-window-size-pixels**.
 * **scrollback-up-half-page** and **scrollback-down-half-page** key
@@ -3489,7 +3489,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   ([#128](https://codeberg.org/dnkl/foot/issues/128)).
 * **scrollback-up-line** and **scrollback-down-line** key
   bindings. They scroll up/down a single line in the scrollback.
-* **mouse.alternate-scroll-mode** option to `foot.ini`. This option
+* **mouse.alternate-scroll-mode** option to `boot.ini`. This option
   controls the initial state of the _Alternate Scroll Mode_, and
   defaults to `yes`. When enabled, mouse scroll events are translated
   to up/down key events in the alternate screen, letting you scroll in
@@ -3499,16 +3499,16 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Changed
 
-* Renamed man page for `foot.ini` from **foot**(5) to **foot.ini**(5).
-* Configuration errors are no longer fatal; foot will start and print
+* Renamed man page for `boot.ini` from **boot**(5) to **boot.ini**(5).
+* Configuration errors are no longer fatal; boot will start and print
   an error inside the terminal (and of course still log errors on
   stderr).
 * Default `--server` socket path to use `$WAYLAND_DISPLAY` instead of
   `$XDG_SESSION_ID` ([#55](https://codeberg.org/dnkl/foot/issues/55)).
 * Trailing empty cells are no longer highlighted in mouse selections.
-* Foot now searches for its configuration in
-  `$XDG_DATA_DIRS/foot/foot.ini`, if no configuration is found in
-  `$XDG_CONFIG_HOME/foot/foot.ini` or in `$XDG_CONFIG_HOME/footrc`.
+* Boot now searches for its configuration in
+  `$XDG_DATA_DIRS/boot/boot.ini`, if no configuration is found in
+  `$XDG_CONFIG_HOME/boot/boot.ini` or in `$XDG_CONFIG_HOME/bootrc`.
 * Minimum window size changed from four rows and 20 columns, to 1 row
   and 2 columns.
 * **scrollback-up/down** renamed to **scrollback-up/down-page**.
@@ -3571,17 +3571,17 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 * Crash when starting a selection inside the margins.
 * Improved font size consistency across multiple monitors with
   different DPI ([#47](https://codeberg.org/dnkl/foot/issues/47)).
-* Handle trailing comments in `footrc`
+* Handle trailing comments in `bootrc`
 
 
 ## 1.4.3
 ### Added
 
 * Section to [README.md](README.md) describing how to programmatically
-  identify foot.
+  identify boot.
 * [LICENSE](LICENSE), [README.md](README.md) and
   [CHANGELOG.md](CHANGELOG.md) are now installed to
-  `${datadir}/doc/foot`.
+  `${datadir}/doc/boot`.
 * Support for escaping quotes in **pipe-visible** and
   **pipe-scrollback** commands.
 
@@ -3590,9 +3590,9 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 * Primary DA to no longer indicate support for _Selective Erase_,
   _Technical Characters_ and _Terminal State Interrogation_.
-* Secondary DA to report foot as a VT220 instead of a VT420.
-* Secondary DA to report foot's version number in parameter 2, the
-  _Firmware Version_. The string is made up of foot's major, minor and
+* Secondary DA to report boot as a VT220 instead of a VT420.
+* Secondary DA to report boot's version number in parameter 2, the
+  _Firmware Version_. The string is made up of boot's major, minor and
   patch version numbers, always using two digits for each version
   number and without any other separating characters. Thus, _1.4.2_
   would be reported as `010402` (i.e. the full response would be
@@ -3647,12 +3647,12 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 * `Sync` to terminfo. This is a tmux extension that indicates
   _"Synchronized Updates"_ are supported.
-* `--hold` command line option to `footclient`.
+* `--hold` command line option to `bootclient`.
 * Key mapping for `KP_Decimal`.
 * Terminfo entries for keypad keys: `ka1`, `ka2`, `ka3`, `kb1`, `kb3`,
   `kc1`, `kc2`, `kc3`, `kp5`, `kpADD`, `kpCMA`, `kpDIV`, `kpDOT`,
   `kpMUL`, `kpSUB` and `kpZRO`.
-* **blink** option to `footrc`; a boolean that lets you control
+* **blink** option to `bootrc`; a boolean that lets you control
     whether the cursor should blink or not by default. Note that
     applications can override this.
 * Multi-seat support
@@ -3713,9 +3713,9 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   `\E[J3` was executed.
 * Assert (debug builds) when an `\e]4` OSC escape was not followed by
   a `;`.
-* Window title always being set to "foot" on reset.
+* Window title always being set to "boot" on reset.
 * Terminfo entry `kb2` (center keypad key); it is now set to `\EOu`
-  (which is what foot emits) instead of the incorrect value `\EOE`.
+  (which is what boot emits) instead of the incorrect value `\EOE`.
 * Palette reuse in sixel images. Previously, the palette was reset
   after each image.
 * Do not auto-resize a sixel image for which the client has specified
@@ -3727,7 +3727,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 * Sixel images being erased when printing text next to them.
 * Sixel handling when resizing window.
 * Sixel handling when scrollback wraps around.
-* Foot now issues much fewer `wl_surface_damage_buffer()` calls
+* Boot now issues much fewer `wl_surface_damage_buffer()` calls
   ([#35](https://codeberg.org/dnkl/foot/issues/35)).
 * `C0::VT` to be processed as `C0::LF`. Previously, `C0::VT` would
   only move the cursor down, but never scroll.
@@ -3748,14 +3748,14 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Added
 
-* User configurable key- and mouse bindings. See `man 5 foot` and the
-  example `footrc` ([#1](https://codeberg.org/dnkl/foot/issues/1))
-* **initial-window-mode** option to `footrc`, that lets you control
+* User configurable key- and mouse bindings. See `man 5 boot` and the
+  example `bootrc` ([#1](https://codeberg.org/dnkl/foot/issues/1))
+* **initial-window-mode** option to `bootrc`, that lets you control
   the initial mode for each newly spawned window: _windowed_,
   _maximized_ or _fullscreen_.
-* **app-id** option to `footrc` and `--app-id` command line option,
+* **app-id** option to `bootrc` and `--app-id` command line option,
   that sets the _app-id_ property on the Wayland window.
-* **title** option to `footrc` and `--title` command line option, that
+* **title** option to `bootrc` and `--title` command line option, that
   sets the initial window title.
 * Right mouse button extends the current selection.
 * `CSI Ps ; Ps ; Ps t` escape sequences for the following parameters:
@@ -3781,8 +3781,8 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
   are now loaded in parallel. This speeds up both the initial startup
   time, as well as DPI changes.
 * Command line parsing no longer tries to parse arguments following
-  the command-to-execute. This means one can now write `foot sh -c
-  true` instead of `foot -- sh -c true`.
+  the command-to-execute. This means one can now write `boot sh -c
+  true` instead of `boot -- sh -c true`.
 
 
 ### Removed
@@ -3820,7 +3820,7 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 
 ### Changed
 
-* Changed icon name in `foot.desktop` and `foot-server.desktop` from
+* Changed icon name in `boot.desktop` and `boot-server.desktop` from
   _terminal_ to _utilities-terminal_.
 * `XDG_SESSION_ID` is now included in the server/daemon default socket
   path.
@@ -3848,16 +3848,16 @@ means foot can be PGO:d in e.g. sandboxed build scripts. See
 * Run-time text resize using ctrl-+, ctrl+- and ctrl+0
 * Font size adjusts dynamically to outputs' DPI
 * Reflow text when resizing window
-* **pad** option to `footrc`
-* **login-shell** option to `footrc` and `--login-shell` command line
+* **pad** option to `bootrc`
+* **login-shell** option to `bootrc` and `--login-shell` command line
   option
-* Client side decorations (CSDs). This finally makes foot usable on
+* Client side decorations (CSDs). This finally makes boot usable on
   GNOME.
 * Sixel graphics support
 * OSC 12 and 112 escape sequences (set/reset text cursor color)
 * REP CSI escape sequence
 * `oc` to terminfo
-* foot-server.desktop file
+* boot-server.desktop file
 * Window and cell size reporting escape sequences
 * `--hold` command line option
 * `--print-pid=FILE|FD` command line option

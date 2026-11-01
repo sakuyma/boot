@@ -1,5 +1,5 @@
 # -*- conf -*-
-# this foot theme is based on alacritty iterm theme:
+# this boot theme is based on alacritty iterm theme:
 # https://github.com/alacritty/alacritty-theme/blob/master/themes/iterm.toml
 
 [colors-dark]

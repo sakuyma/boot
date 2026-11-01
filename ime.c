@@ -1,6 +1,6 @@
 #include "ime.h"
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
 
 #include <string.h>
 
@@ -522,7 +522,7 @@ const struct zwp_text_input_v3_listener text_input_listener = {
     .done = &done,
 };
 
-#else /* !FOOT_IME_ENABLED */
+#else /* !BOOT_IME_ENABLED */
 
 void ime_enable(struct seat *seat) {}
 void ime_disable(struct seat *seat) {}

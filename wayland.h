@@ -223,7 +223,7 @@ struct seat {
     struct wl_clipboard clipboard;
     struct wl_primary primary;
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     /* Input Method Editor */
     struct zwp_text_input_v3 *wl_text_input;
     struct {
@@ -508,7 +508,7 @@ struct wayland {
     bool have_background_blur;
 #endif
 
-#if defined(FOOT_IME_ENABLED) && FOOT_IME_ENABLED
+#if defined(BOOT_IME_ENABLED) && BOOT_IME_ENABLED
     struct zwp_text_input_manager_v3 *text_input_manager;
 #endif
 

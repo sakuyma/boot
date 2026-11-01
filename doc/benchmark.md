@@ -30,7 +30,7 @@ Scrollback: 10000 lines
 
 ### Results
 
-| Benchmark (times in ms)       | Foot (GCC+PGO) 1.12.1 | Foot 1.12.1 | Alacritty 0.10.1 | URxvt 9.26 | XTerm 372 |
+| Benchmark (times in ms)       | Boot (GCC+PGO) 1.12.1 | Boot 1.12.1 | Alacritty 0.10.1 | URxvt 9.26 | XTerm 372 |
 |-------------------------------|----------------------:|------------:|-----------------:|-----------:|----------:|
 | cursor motion                 |                 10.40 |       14.07 |            24.97 |      23.38 |   1622.86 |
 | dense cells                   |                 29.58 |       45.46 |            97.45 |   10828.00 |   2323.00 |
@@ -67,7 +67,7 @@ Scrollback=10000 lines
 ### Results
 
 
-| Benchmark (times in ms)       | Foot (GCC+PGO) 1.12.1 | Foot 1.12.1 | Alacritty 0.10.1 | URxvt 9.26 | XTerm 372 |
+| Benchmark (times in ms)       | Boot (GCC+PGO) 1.12.1 | Boot 1.12.1 | Alacritty 0.10.1 | URxvt 9.26 | XTerm 372 |
 |-------------------------------|----------------------:|------------:|-----------------:|-----------:|----------:|
 | cursor motion                 |                 15.03 |       16.74 |            23.22 |      24.14 |   1381.63 |
 | dense cells                   |                 43.56 |       54.10 |            89.43 |    1807.17 |   1945.50 |

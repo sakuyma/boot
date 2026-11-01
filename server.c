@@ -165,7 +165,7 @@ fdm_client(struct fdm *fdm, int fd, int events, void *data)
         }
 
         switch (ipc_hdr.ipc_code) {
-        case FOOT_IPC_SIGUSR: {
+        case BOOT_IPC_SIGUSR: {
             xassert(ipc_hdr.size == sizeof(struct client_ipc_sigusr));
 
             struct client_ipc_sigusr sigusr;
@@ -390,7 +390,7 @@ fdm_client(struct fdm *fdm, int fd, int events, void *data)
 
     instance->terminal = term_init(
         conf != NULL ? conf : server->conf,
-        server->fdm, server->reaper, server->wayl, "footclient", cwd, token,
+        server->fdm, server->reaper, server->wayl, "bootclient", cwd, token,
         NULL, cdata.argc, argv, (const char *const *)envp,
         &term_shutdown_handler, instance);
 
@@ -584,7 +584,7 @@ server_init(struct config *conf, struct fdm *fdm, struct reaper *reaper,
             break;
 
         case CONNECT_SUCCESS:
-            LOG_ERR("%s is already accepting connections; is 'foot --server' already running", sock_path);
+            LOG_ERR("%s is already accepting connections; is 'boot --server' already running", sock_path);
             /* FALLTHROUGH */
 
         case CONNECT_ERR:

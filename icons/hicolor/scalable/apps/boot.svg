@@ -3,7 +3,7 @@
   xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
   width="128" height="128"
   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
- <title>foot logo</title>
+ <title>boot logo</title>
  <sodipodi:namedview showgrid="true">
   <inkscape:grid empspacing="4" />
  </sodipodi:namedview>
@@ -21,7 +21,7 @@
     <dc:source>https://freesvg.org/human-footprints</dc:source>
     <cc:license
       rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
-    <dc:title>foot logo</dc:title>
+    <dc:title>boot logo</dc:title>
     <dc:subject>
      <rdf:Bag>
       <rdf:li>terminal emulator</rdf:li>
@@ -46,7 +46,7 @@
    x="16" y="16"
    rx="7.3846154" ry="7.3846154" />
  <g
-   transform="matrix(0.85714209,0,0,0.85714209,3.4285132,-145.99985)" id="foot">
+   transform="matrix(0.85714209,0,0,0.85714209,3.4285132,-145.99985)" id="boot">
   <path
     style="fill:#fbf1c7"
     id="main"

@@ -546,7 +546,7 @@ decset_decrst(struct terminal *term, unsigned param, bool enable)
         break;
 
     case 2027:
-#if defined(FOOT_GRAPHEME_CLUSTERING)
+#if defined(BOOT_GRAPHEME_CLUSTERING)
         term->grapheme_shaping = enable;
 #endif
         break;
@@ -842,7 +842,7 @@ csi_dispatch(struct terminal *term, uint8_t final)
              * The VT level must be synchronized with the secondary DA
              * response.
              *
-             * Note: tertiary DA responds with "FOOT".
+             * Note: tertiary DA responds with "BOOT".
              */
             char reply[32];
 
@@ -1521,7 +1521,7 @@ csi_dispatch(struct terminal *term, uint8_t final)
                  * 1 - dark mode
                  * 2 - light mode
                  *
-                 * In foot, the themes aren't necessarily light/dark,
+                 * In boot, the themes aren't necessarily light/dark,
                  * but by convention, the primary theme is dark, and
                  * the alternative theme is light.
                  */
@@ -1607,16 +1607,16 @@ csi_dispatch(struct terminal *term, uint8_t final)
                  * We report ourselves as a VT220. This must be
                  * synchronized with the primary DA response.
                  *
-                 * Note: tertiary DA replies with "FOOT".
+                 * Note: tertiary DA replies with "BOOT".
                  */
 
-                static_assert(FOOT_MAJOR < 100, "Major version must not exceed 99");
-                static_assert(FOOT_MINOR < 100, "Minor version must not exceed 99");
-                static_assert(FOOT_PATCH < 100, "Patch version must not exceed 99");
+                static_assert(BOOT_MAJOR < 100, "Major version must not exceed 99");
+                static_assert(BOOT_MINOR < 100, "Minor version must not exceed 99");
+                static_assert(BOOT_PATCH < 100, "Patch version must not exceed 99");
 
                 char reply[64];
                 size_t n = xsnprintf(reply, sizeof(reply), "\033[>1;%02u%02u%02u;0c",
-                         FOOT_MAJOR, FOOT_MINOR, FOOT_PATCH);
+                         BOOT_MAJOR, BOOT_MINOR, BOOT_PATCH);
 
                 term_to_slave(term, reply, n);
                 break;
@@ -1703,9 +1703,9 @@ csi_dispatch(struct terminal *term, uint8_t final)
 
             char reply[64];
             size_t n = xsnprintf(
-                reply, sizeof(reply), "\033P>|foot(%u.%u.%u%s%s)\033\\",
-                FOOT_MAJOR, FOOT_MINOR, FOOT_PATCH,
-                FOOT_EXTRA[0] != '\0' ? "-" : "", FOOT_EXTRA);
+                reply, sizeof(reply), "\033P>|boot(%u.%u.%u%s%s)\033\\",
+                BOOT_MAJOR, BOOT_MINOR, BOOT_PATCH,
+                BOOT_EXTRA[0] != '\0' ? "-" : "", BOOT_EXTRA);
             term_to_slave(term, reply, n);
             break;
         }
@@ -1823,7 +1823,7 @@ csi_dispatch(struct terminal *term, uint8_t final)
              * hexadecimal value from 00 through FF.
              */
 
-            term_to_slave(term, "\033P!|464f4f54\033\\", 14);  /* FOOT */
+            term_to_slave(term, "\033P!|464f4f54\033\\", 14);  /* BOOT */
             break;
 
         case 'u': {

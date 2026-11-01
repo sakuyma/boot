@@ -20,7 +20,7 @@ shift 3
 # fi
 
 if [ ! -f "${srcdir}"/generate-version.sh ]; then
-   echo "error: ${srcdir}: does not appear to be a foot source directory"
+   echo "error: ${srcdir}: does not appear to be a boot source directory"
    exit 1
 fi
 

@@ -1676,7 +1676,7 @@ UNITTEST
      * some cases, *moves* the entire URI vector to a new base
      * address. grid_row_uri_range_erase() did not account for this,
      * and tried to update the 'end' member in the URI range we just
-     * split. This causes foot to crash when the xrealloc() has moved
+     * split. This causes boot to crash when the xrealloc() has moved
      * the URI range vector.
      *
      * (note: we're only verifying we don't crash here, hence the lack
