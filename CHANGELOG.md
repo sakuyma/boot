@@ -82,6 +82,10 @@
 
 ### Changed
 
+* The project has been renamed from foot to boot. The binaries are
+  `boot` and `bootclient`, the configuration file is `boot.ini`, the
+  terminfo entry is `boot`, and the server socket is
+  `$XDG_RUNTIME_DIR/boot-$WAYLAND_DISPLAY.sock`.
 * Cells with a non-default background colors, but otherwise empty, are
   now preserved (not removed) when resizing a terminal window
   ([#2462][2462]).
