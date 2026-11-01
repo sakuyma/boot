@@ -68,7 +68,7 @@ body:
     id: config
     attributes:
       label: Boot config
-      description: Paste your entire `boot.ini` here (do not forget to sanitize it!)
+      description: Paste your entire `boot.lua` here (do not forget to sanitize it!)
       render: ini
     validations:
       required: true

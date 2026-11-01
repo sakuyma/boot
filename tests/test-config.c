@@ -1525,6 +1525,69 @@ test_section_tweak(void)
     config_free(&conf);
 }
 
+static void
+test_lua_config(void)
+{
+    static const char template[] = "/tmp/boot-config-test-XXXXXX";
+    char path[sizeof(template)];
+
+    memcpy(path, template, sizeof(template));
+    int fd = mkstemp(path);
+    xassert(fd >= 0);
+
+    static const char script[] =
+        "return {\n"
+        "    main = {\n"
+        "        term = 'lua-term',\n"
+        "        font = {'monospace:size=8', 'monospace:size=12'},\n"
+        "        ['dpi-aware'] = true,\n"
+        "    },\n"
+        "    ['colors-dark'] = {\n"
+        "        background = '123456',\n"
+        "        [16] = 'abcdef',\n"
+        "    },\n"
+        "    ['key-bindings'] = {\n"
+        "        noop = {'Control+Shift+F12'},\n"
+        "    },\n"
+        "}\n";
+
+    xassert(write(fd, script, sizeof(script) - 1) ==
+            (ssize_t)(sizeof(script) - 1));
+    close(fd);
+
+    struct config conf = {0};
+    bool ret = parse_config_file(path, &conf, true);
+    unlink(path);
+
+    xassert(ret);
+    xassert(streq(conf.term, "lua-term"));
+    xassert(conf.fonts[0].count == 2);
+    xassert(conf.dpi_aware);
+    xassert(conf.colors_dark.bg == 0x123456);
+    xassert(conf.colors_dark.table[16] == 0xabcdef);
+
+    config_free(&conf);
+
+    /* Invalid option must fail */
+    memcpy(path, template, sizeof(template));
+    fd = mkstemp(path);
+    xassert(fd >= 0);
+
+    static const char invalid[] =
+        "return { main = { ['not-an-option'] = 1 } }\n";
+
+    xassert(write(fd, invalid, sizeof(invalid) - 1) ==
+            (ssize_t)(sizeof(invalid) - 1));
+    close(fd);
+
+    struct config conf2 = {0};
+    ret = parse_config_file(path, &conf2, true);
+    unlink(path);
+
+    xassert(!ret);
+    config_free(&conf2);
+}
+
 int
 main(int argc, const char *const *argv)
 {
@@ -1553,6 +1616,7 @@ main(int argc, const char *const *argv)
     test_section_text_bindings();
     test_section_environment();
     test_section_tweak();
+    test_lua_config();
     log_deinit();
     FcFini();
     return 0;

@@ -45,7 +45,7 @@ steps:
     commands:
       - apk update
       - apk add musl-dev linux-headers meson ninja gcc clang scdoc ncurses
-      - apk add libxkbcommon-dev pixman-dev freetype-dev fontconfig-dev harfbuzz-dev utf8proc-dev
+      - apk add libxkbcommon-dev pixman-dev freetype-dev fontconfig-dev harfbuzz-dev utf8proc-dev luajit-dev
       - apk add wayland-dev wayland-protocols
       - apk add git
       - apk add check-dev
@@ -102,7 +102,7 @@ steps:
     commands:
       - apk update
       - apk add musl-dev linux-headers meson ninja gcc clang scdoc ncurses
-      - apk add libxkbcommon-dev pixman-dev freetype-dev fontconfig-dev harfbuzz-dev utf8proc-dev
+      - apk add libxkbcommon-dev pixman-dev freetype-dev fontconfig-dev harfbuzz-dev utf8proc-dev luajit-dev
       - apk add wayland-dev wayland-protocols
       - apk add git
       - apk add check-dev

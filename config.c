@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
-#include <fcntl.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -16,6 +15,10 @@
 #include <linux/input-event-codes.h>
 #include <xkbcommon/xkbcommon.h>
 #include <fontconfig/fontconfig.h>
+
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #define LOG_MODULE "config"
 #define LOG_ENABLE_DBG 0
@@ -299,12 +302,21 @@ log_contextual(struct context *ctx, enum log_class log_class,
     if (!print_section_suffix)
         ctx->section_suffix = "";
 
-    log_and_notify(
-        ctx->conf, log_class, file, lineno, "%s:%d: [%s%s%s]%s%s%s%s: %s",
-        ctx->path, ctx->lineno, ctx->section,
-        print_section_suffix ? ":" : "", ctx->section_suffix,
-        print_dot ? "." : "", ctx->key, print_colon ? ": " : "",
-        ctx->value, formatted_msg);
+    if (ctx->lineno > 0) {
+        log_and_notify(
+            ctx->conf, log_class, file, lineno, "%s:%u: [%s%s%s]%s%s%s%s: %s",
+            ctx->path, ctx->lineno, ctx->section,
+            print_section_suffix ? ":" : "", ctx->section_suffix,
+            print_dot ? "." : "", ctx->key, print_colon ? ": " : "",
+            ctx->value, formatted_msg);
+    } else {
+        log_and_notify(
+            ctx->conf, log_class, file, lineno, "%s: [%s%s%s]%s%s%s%s: %s",
+            ctx->path, ctx->section,
+            print_section_suffix ? ":" : "", ctx->section_suffix,
+            print_dot ? "." : "", ctx->key, print_colon ? ": " : "",
+            ctx->value, formatted_msg);
+    }
     free(formatted_msg);
 }
 
@@ -349,10 +361,17 @@ log_contextual_errno(struct context *ctx, const char *file, int lineno,
     if (!print_colon)
         ctx->value = "";
 
-    log_and_notify_errno(
-        ctx->conf, file, lineno, "%s:%d: [%s]%s%s%s%s: %s",
-        ctx->path, ctx->lineno, ctx->section, print_dot ? "." : "",
-        ctx->key, print_colon ? ": " : "", ctx->value, formatted_msg);
+    if (ctx->lineno > 0) {
+        log_and_notify_errno(
+            ctx->conf, file, lineno, "%s:%u: [%s]%s%s%s%s: %s",
+            ctx->path, ctx->lineno, ctx->section, print_dot ? "." : "",
+            ctx->key, print_colon ? ": " : "", ctx->value, formatted_msg);
+    } else {
+        log_and_notify_errno(
+            ctx->conf, file, lineno, "%s: [%s]%s%s%s%s: %s",
+            ctx->path, ctx->section, print_dot ? "." : "",
+            ctx->key, print_colon ? ": " : "", ctx->value, formatted_msg);
+    }
 
     free(formatted_msg);
 }
@@ -395,14 +414,13 @@ get_shell(void)
 
 struct config_file {
     char *path;       /* Full, absolute, path */
-    int fd;           /* FD of file, O_RDONLY */
 };
 
 static struct config_file
 open_config(void)
 {
     char *path = NULL;
-    struct config_file ret = {.path = NULL, .fd = -1};
+    struct config_file ret = {.path = NULL};
 
     const char *xdg_config_home = getenv("XDG_CONFIG_HOME");
     const char *xdg_config_dirs = getenv("XDG_CONFIG_DIRS");
@@ -411,16 +429,15 @@ open_config(void)
 
     /* First, check XDG_CONFIG_HOME (or .config, if unset) */
     if (xdg_config_home != NULL && xdg_config_home[0] != '\0')
-        path = xstrjoin(xdg_config_home, "/boot/boot.ini");
+        path = xstrjoin(xdg_config_home, "/boot/boot.lua");
     else if (home_dir != NULL)
-        path = xstrjoin(home_dir, "/.config/boot/boot.ini");
+        path = xstrjoin(home_dir, "/.config/boot/boot.lua");
 
     if (path != NULL) {
         LOG_DBG("checking for %s", path);
-        int fd = open(path, O_RDONLY | O_CLOEXEC);
 
-        if (fd >= 0) {
-            ret = (struct config_file) {.path = path, .fd = fd};
+        if (access(path, R_OK) == 0) {
+            ret = (struct config_file) {.path = path};
             path = NULL;
             goto done;
         }
@@ -438,12 +455,11 @@ open_config(void)
          conf_dir = strtok(NULL, ":"))
     {
         free(path);
-        path = xstrjoin(conf_dir, "/boot/boot.ini");
+        path = xstrjoin(conf_dir, "/boot/boot.lua");
 
         LOG_DBG("checking for %s", path);
-        int fd = open(path, O_RDONLY | O_CLOEXEC);
-        if (fd >= 0) {
-            ret = (struct config_file){.path = path, .fd = fd};
+        if (access(path, R_OK) == 0) {
+            ret = (struct config_file){.path = path};
             path = NULL;
             goto done;
         }
@@ -876,7 +892,7 @@ value_to_spawn_template(struct context *ctx,
 }
 
 static bool parse_config_file(
-    FILE *f, struct config *conf, const char *path, bool errors_are_fatal);
+    const char *path, struct config *conf, bool errors_are_fatal);
 
 static bool
 parse_section_main(struct context *ctx)
@@ -909,17 +925,7 @@ parse_section_main(struct context *ctx)
             return false;
         }
 
-        FILE *include = fopen(include_path, "r");
-
-        if (include == NULL) {
-            LOG_CONTEXTUAL_ERRNO("failed to open");
-            free(_include_path);
-            return false;
-        }
-
-        bool ret = parse_config_file(
-            include, conf, include_path, errors_are_fatal);
-        fclose(include);
+        bool ret = parse_config_file(include_path, conf, errors_are_fatal);
 
         LOG_INFO("imported sub-configuration from %s", include_path);
         free(_include_path);
@@ -3143,167 +3149,417 @@ str_to_section(char *str, char **suffix)
     return SECTION_COUNT;
 }
 
-static bool
-parse_config_file(FILE *f, struct config *conf, const char *path, bool errors_are_fatal)
+/*
+ * Lua configuration
+ *
+ * The configuration file is a Lua script, run by LuaJIT. It must
+ * return a table, where each top level key is a section name, and
+ * each section is a table of option/value pairs:
+ *
+ *     return {
+ *         main = {
+ *             term = "boot",
+ *             font = "Iosevka:size=12",
+ *             ["dpi-aware"] = true,
+ *         },
+ *         ["colors-dark"] = {
+ *             background = "000000",
+ *             [16] = "ff00ff",
+ *         },
+ *     }
+ *
+ * Values may be strings, numbers or booleans. A table value is
+ * interpreted as a list, and the option is applied once per element.
+ * Options that take a comma separated list of fonts are joined into a
+ * single value instead.
+ *
+ * Section (and option) names are used as-is. Since most of them
+ * contain a '-', they must be quoted in the table, e.g.
+ * ["key-bindings"] = { ... }.
+ *
+ * Sections that support a colon suffix (i.e. "regex") may also be
+ * specified as a nested table:
+ *
+ *     regex = {
+ *         my-regex = { regex = "...", launch = "..." },
+ *     }
+ */
+
+struct lua_option {
+    char *key;
+    int ref;              /* luaL_ref() reference */
+};
+
+static int
+lua_abs_index(lua_State *L, int idx)
 {
-    enum section section = SECTION_MAIN;
+    return idx > 0 || idx <= LUA_REGISTRYINDEX ? idx : lua_gettop(L) + idx + 1;
+}
 
-    char *_line = NULL;
-    size_t count = 0;
-    bool ret = true;
+static void
+lua_number_to_string(lua_State *L, int idx, char *buf, size_t size)
+{
+    lua_Number value = lua_tonumber(L, idx);
 
-#define error_or_continue()                     \
-    {                                           \
-        if (errors_are_fatal) {                 \
-            ret = false;                        \
-            goto done;                          \
-        } else                                  \
-            continue;                           \
+    if (value >= -1e15 && value <= 1e15 &&
+        value == (lua_Number)(long long)value)
+    {
+        xsnprintf(buf, size, "%lld", (long long)value);
+    } else
+        xsnprintf(buf, size, "%.17g", (double)value);
+}
+
+/*
+ * Note: does *not* convert number keys to strings on the Lua stack,
+ * since that would confuse lua_next().
+ */
+static struct lua_option *
+lua_collect_options(lua_State *L, int tidx, size_t *count)
+{
+    tidx = lua_abs_index(L, tidx);
+
+    size_t n = 0;
+    size_t capacity = 0;
+    struct lua_option *options = NULL;
+
+    lua_pushnil(L);
+    while (lua_next(L, tidx) != 0) {
+        /* Key at -2, value at -1 */
+
+        char key_buf[64];
+        const char *key = NULL;
+
+        switch (lua_type(L, -2)) {
+        case LUA_TSTRING:
+            key = lua_tostring(L, -2);
+            break;
+
+        case LUA_TNUMBER:
+            lua_number_to_string(L, -2, key_buf, sizeof(key_buf));
+            key = key_buf;
+            break;
+
+        default:
+            /* Unsupported key type; will fail when applied */
+            key = "?";
+            break;
+        }
+
+        if (n == capacity) {
+            capacity = capacity == 0 ? 8 : 2 * capacity;
+            options = xreallocarray(options, capacity, sizeof(options[0]));
+        }
+
+        options[n].key = xstrdup(key);
+        options[n].ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        n++;
+
+        /* luaL_ref() popped the value. The key is still on the stack,
+         * which is what lua_next() expects */
     }
 
-    char *section_name = xstrdup("main");
-    char *section_suffix = NULL;
+    *count = n;
+    return options;
+}
 
+static void
+lua_free_options(lua_State *L, struct lua_option *options, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        luaL_unref(L, LUA_REGISTRYINDEX, options[i].ref);
+        free(options[i].key);
+    }
+
+    free(options);
+}
+
+static int
+compare_options(const void *_a, const void *_b)
+{
+    const struct lua_option *a = _a;
+    const struct lua_option *b = _b;
+    return strcmp(a->key, b->key);
+}
+
+static bool
+lua_value_to_string(lua_State *L, int idx, char *buf, size_t size,
+                    const char **ret)
+{
+    switch (lua_type(L, idx)) {
+    case LUA_TBOOLEAN:
+        *ret = lua_toboolean(L, idx) ? "yes" : "no";
+        return true;
+
+    case LUA_TNUMBER:
+        lua_number_to_string(L, idx, buf, size);
+        *ret = buf;
+        return true;
+
+    case LUA_TSTRING:
+        *ret = lua_tostring(L, idx);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+/* Options that take a comma separated list of fonts */
+static bool
+lua_is_font_list_key(enum section section, const char *key)
+{
+    if (section == SECTION_MAIN) {
+        return streq(key, "font") || streq(key, "font-bold") ||
+            streq(key, "font-italic") || streq(key, "font-bold-italic");
+    }
+
+    return section == SECTION_CSD && streq(key, "font");
+}
+
+static bool apply_lua_section(
+    lua_State *L, struct context *ctx, enum section section,
+    const char *name, int tidx);
+
+static bool
+apply_lua_value(lua_State *L, struct context *ctx, enum section section,
+                const char *key, int vidx)
+{
+    vidx = lua_abs_index(L, vidx);
+
+    /* nil means "not set"; this allows conditional configuration */
+    if (lua_isnil(L, vidx))
+        return true;
+
+    if (lua_istable(L, vidx)) {
+        const size_t count = lua_objlen(L, vidx);
+
+        if (lua_is_font_list_key(section, key)) {
+            /* A list of fonts is a single, comma separated, value */
+            char *value = NULL;
+
+            for (size_t i = 1; i <= count; i++) {
+                lua_rawgeti(L, vidx, i);
+
+                char buf[64];
+                const char *str;
+                bool ok = lua_value_to_string(L, -1, buf, sizeof(buf), &str);
+                lua_pop(L, 1);
+
+                if (!ok) {
+                    LOG_CONTEXTUAL_ERR(
+                        "font list entries must be strings");
+                    free(value);
+                    return false;
+                }
+
+                if (value == NULL)
+                    value = xstrdup(str);
+                else {
+                    char *joined = xasprintf("%s, %s", value, str);
+                    free(value);
+                    value = joined;
+                }
+            }
+
+            ctx->key = key;
+            ctx->value = value != NULL ? value : "";
+            bool ret = section_info[section].fun(ctx);
+            free(value);
+            return ret;
+        }
+
+        bool ret = true;
+        for (size_t i = 1; i <= count; i++) {
+            lua_rawgeti(L, vidx, i);
+            if (!apply_lua_value(L, ctx, section, key, lua_gettop(L)))
+                ret = false;
+            lua_pop(L, 1);
+        }
+        return ret;
+    }
+
+    char buf[64];
+    const char *value;
+
+    if (!lua_value_to_string(L, vidx, buf, sizeof(buf), &value)) {
+        LOG_CONTEXTUAL_ERR("invalid value type: %s",
+                           lua_typename(L, lua_type(L, vidx)));
+        return false;
+    }
+
+    ctx->key = key;
+    ctx->value = value;
+    return section_info[section].fun(ctx);
+}
+
+static bool
+apply_lua_section(lua_State *L, struct context *ctx, enum section section,
+                  const char *name, int tidx)
+{
+    tidx = lua_abs_index(L, tidx);
+
+    size_t count = 0;
+    struct lua_option *options = lua_collect_options(L, tidx, &count);
+    qsort(options, count, sizeof(options[0]), compare_options);
+
+    bool ret = true;
+
+    for (size_t i = 0; i < count; i++) {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, options[i].ref);
+
+        /* Sections that support a colon suffix may use a nested table:
+         *
+         *     regex = { name = { regex = "...", ... } }
+         */
+        if (section == SECTION_REGEX && lua_istable(L, -1)) {
+            char *section_name = xasprintf("%s:%s", name, options[i].key);
+            char *suffix = NULL;
+            enum section sub_section = str_to_section(section_name, &suffix);
+
+            if (sub_section == SECTION_COUNT) {
+                LOG_CONTEXTUAL_ERR(
+                    "invalid regex name: %s", options[i].key);
+                ret = false;
+                free(section_name);
+            } else {
+                const char *old_section = ctx->section;
+                const char *old_suffix = ctx->section_suffix;
+
+                ctx->section = section_name;
+                ctx->section_suffix = suffix;
+                ctx->key = NULL;
+                ctx->value = NULL;
+
+                if (!apply_lua_section(
+                        L, ctx, sub_section, section_name, lua_gettop(L)))
+                {
+                    ret = false;
+                }
+
+                ctx->section = old_section;
+                ctx->section_suffix = old_suffix;
+                free(section_name);
+            }
+        } else {
+            ctx->key = options[i].key;
+            ctx->value = NULL;
+
+            if (!apply_lua_value(
+                    L, ctx, section, options[i].key, lua_gettop(L)))
+            {
+                ret = false;
+            }
+        }
+
+        lua_pop(L, 1);
+    }
+
+    lua_free_options(L, options, count);
+    return ret;
+}
+
+static bool
+apply_lua_config(lua_State *L, struct context *ctx, int tidx)
+{
+    struct config *conf = ctx->conf;
+    tidx = lua_abs_index(L, tidx);
+
+    size_t count = 0;
+    struct lua_option *options = lua_collect_options(L, tidx, &count);
+    qsort(options, count, sizeof(options[0]), compare_options);
+
+    bool ret = true;
+
+    for (size_t i = 0; i < count; i++) {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, options[i].ref);
+
+        if (!lua_istable(L, -1)) {
+            LOG_AND_NOTIFY_ERR(
+                "%s: section '%s' must be a table", ctx->path,
+                options[i].key);
+            ret = false;
+            lua_pop(L, 1);
+            continue;
+        }
+
+        char *section_name = xstrdup(options[i].key);
+        char *suffix = NULL;
+        enum section section = str_to_section(section_name, &suffix);
+
+        const char *old_section = ctx->section;
+        const char *old_suffix = ctx->section_suffix;
+
+        if (section == SECTION_COUNT) {
+            LOG_AND_NOTIFY_ERR(
+                "%s: invalid section name: %s", ctx->path, section_name);
+            ret = false;
+        } else {
+            ctx->section = section_name;
+            ctx->section_suffix = suffix;
+            ctx->key = NULL;
+            ctx->value = NULL;
+
+            if (!apply_lua_section(
+                    L, ctx, section, section_name, lua_gettop(L)))
+            {
+                ret = false;
+            }
+        }
+
+        ctx->section = old_section;
+        ctx->section_suffix = old_suffix;
+
+        free(section_name);
+        lua_pop(L, 1);
+    }
+
+    lua_free_options(L, options, count);
+    return ret;
+}
+
+static bool
+parse_config_file(const char *path, struct config *conf, bool errors_are_fatal)
+{
     struct context context = {
         .conf = conf,
-        .section = section_name,
-        .section_suffix = section_suffix,
+        .section = "main",
+        .section_suffix = NULL,
         .path = path,
         .lineno = 0,
         .errors_are_fatal = errors_are_fatal,
     };
-    struct context *ctx = &context;  /* For LOG_AND_*() */
+    struct context *ctx = &context;
 
-    errno = 0;
-    ssize_t len;
+    lua_State *L = luaL_newstate();
 
-    while ((len = getline(&_line, &count, f)) != -1) {
-        context.key = NULL;
-        context.value = NULL;
-        context.lineno++;
-
-        char *line = _line;
-
-        /* Strip leading whitespace */
-        while (isspace(line[0])) {
-            line++;
-            len--;
-        }
-
-        /* Empty line, or comment */
-        if (line[0] == '\0' || line[0] == '#')
-            continue;
-
-        /* Strip the trailing newline - may be absent on the last line */
-        if (line[len - 1] == '\n')
-            line[--len] = '\0';
-
-        /* Split up into key/value pair + trailing comment separated by blank */
-        char *key_value = line;
-        char *kv_trailing = &line[len - 1];
-        char *comment = &line[1];
-        while (comment[1] != '\0') {
-            if (isblank(comment[0]) && comment[1] == '#') {
-                comment[1] = '\0'; /* Terminate key/value pair */
-                kv_trailing = comment++;
-                break;
-            }
-            comment++;
-        }
-        comment++;
-
-        /* Strip trailing whitespace */
-        while (isspace(kv_trailing[0]))
-            kv_trailing--;
-        kv_trailing[1] = '\0';
-
-        /* Check for new section */
-        if (key_value[0] == '[') {
-            key_value++;
-
-            if (key_value[0] == ']') {
-                LOG_CONTEXTUAL_ERR("empty section name");
-                section = SECTION_COUNT;
-                error_or_continue();
-            }
-
-            char *end = strchr(key_value, ']');
-
-            if (end == NULL) {
-                context.section = key_value;
-                LOG_CONTEXTUAL_ERR("syntax error: no closing ']'");
-                context.section = section_name;
-                section = SECTION_COUNT;
-                error_or_continue();
-            }
-
-            end[0] = '\0';
-
-            if (end[1] != '\0') {
-                context.section = key_value;
-                LOG_CONTEXTUAL_ERR("section declaration contains trailing "
-                                   "characters");
-                context.section = section_name;
-                section = SECTION_COUNT;
-                error_or_continue();
-            }
-
-            char *maybe_section_suffix;
-            section = str_to_section(key_value, &maybe_section_suffix);
-            if (section == SECTION_COUNT) {
-                context.section = key_value;
-                LOG_CONTEXTUAL_ERR("invalid section name: %s", key_value);
-                context.section = section_name;
-                error_or_continue();
-            }
-
-            free(section_name);
-            free(section_suffix);
-            section_name = xstrdup(key_value);
-            section_suffix = maybe_section_suffix != NULL ? xstrdup(maybe_section_suffix) : NULL;
-            context.section = section_name;
-            context.section_suffix = section_suffix;
-
-            /* Process next line */
-            continue;
-        }
-
-        if (section >= SECTION_COUNT) {
-            /* Last section name was invalid; ignore all keys in it */
-            continue;
-        }
-
-        if (!parse_key_value(key_value, NULL, &context.key, &context.value)) {
-            LOG_CONTEXTUAL_ERR("syntax error: key/value pair has no %s",
-                               context.key == NULL ? "key" : "value");
-            error_or_continue();
-        }
-
-        LOG_DBG("section=%s, key='%s', value='%s', comment='%s'",
-                section_info[section].name, context.key, context.value, comment);
-
-        xassert(section >= 0 && section < SECTION_COUNT);
-
-        parser_fun_t section_parser = section_info[section].fun;
-        xassert(section_parser != NULL);
-
-        if (!section_parser(ctx))
-            error_or_continue();
-
-        /* For next iteration of getline() */
-        errno = 0;
+    if (L == NULL) {
+        LOG_AND_NOTIFY_ERR("%s: failed to create Lua state", path);
+        return false;
     }
 
-    if (errno != 0) {
-        LOG_AND_NOTIFY_ERRNO("failed to read from configuration");
-        if (errors_are_fatal)
-            ret = false;
+    luaL_openlibs(L);
+
+    if (luaL_loadfile(L, path) != 0 || lua_pcall(L, 0, 1, 0) != 0) {
+        const char *msg = lua_tostring(L, -1);
+        LOG_AND_NOTIFY_ERR(
+            "%s", msg != NULL ? msg : "unknown Lua error");
+        lua_close(L);
+        return false;
     }
 
-done:
-    free(section_name);
-    free(section_suffix);
-    free(_line);
+    bool ret = true;
+
+    if (lua_isnil(L, -1)) {
+        /* Empty configuration file */
+    } else if (!lua_istable(L, -1)) {
+        LOG_AND_NOTIFY_ERR(
+            "%s: the configuration must return a table", path);
+        ret = false;
+    } else if (!apply_lua_config(L, ctx, -1)) {
+        ret = false;
+    }
+
+    lua_close(L);
     return ret;
 }
 
@@ -3679,38 +3935,26 @@ config_load(struct config *conf, const char *conf_path,
     add_default_url_bindings(conf);
     add_default_mouse_bindings(conf);
 
-    struct config_file conf_file = {.path = NULL, .fd = -1};
+    struct config_file conf_file = {.path = NULL};
     if (conf_path != NULL) {
-        int fd = open(conf_path, O_RDONLY);
-        if (fd < 0) {
+        if (access(conf_path, R_OK) < 0) {
             LOG_AND_NOTIFY_ERRNO("%s: failed to open", conf_path);
             ret = !errors_are_fatal;
-        } else {
+        } else
             conf_file.path = xstrdup(conf_path);
-            conf_file.fd = fd;
-        }
     } else {
         conf_file = open_config();
-        if (conf_file.fd < 0) {
+        if (conf_file.path == NULL) {
             LOG_WARN("no configuration found, using defaults");
             ret = !errors_are_fatal;
         }
     }
 
-    if (conf_file.path && conf_file.fd >= 0) {
+    if (conf_file.path != NULL) {
         LOG_INFO("loading configuration from %s", conf_file.path);
 
-        FILE *f = fdopen(conf_file.fd, "r");
-        if (f == NULL) {
-            LOG_AND_NOTIFY_ERRNO("%s: failed to open", conf_file.path);
+        if (!parse_config_file(conf_file.path, conf, errors_are_fatal))
             ret = !errors_are_fatal;
-        } else {
-            if (!parse_config_file(f, conf, conf_file.path, errors_are_fatal))
-                ret = !errors_are_fatal;
-
-            fclose(f);
-            conf_file.fd = -1;
-        }
     }
 
     if (!config_override_apply(conf, overrides, errors_are_fatal))
@@ -3741,8 +3985,6 @@ config_load(struct config *conf, const char *conf_path,
 #endif
 
     free(conf_file.path);
-    if (conf_file.fd >= 0)
-        close(conf_file.fd);
 
     return ret;
 }

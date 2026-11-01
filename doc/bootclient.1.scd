@@ -170,7 +170,7 @@ fallback to the less specific path, with the following priority:
 	terminfo/termcap identifier. This is used by client applications
 	to determine which capabilities a terminal supports. The value is
 	set according to either the *--term* command-line option or the
-	*term* config option in *boot.ini*(5).
+	*term* config option in *boot.lua*(5).
 
 *COLORTERM*
 	This variable is set to *truecolor*, to indicate to client
@@ -184,7 +184,7 @@ fallback to the less specific path, with the following priority:
 	*/etc/shells*).
 
 In addition to the variables listed above, custom environment
-variables may be defined in *boot.ini*(5).
+variables may be defined in *boot.lua*(5).
 
 ## Variables *unset* in the child process
 
@@ -195,7 +195,7 @@ variables may be defined in *boot.ini*(5).
 	misdetecting boot.
 
 In addition to the variables listed above, custom environment
-variables to unset may be defined in *boot.ini*(5).
+variables to unset may be defined in *boot.lua*(5).
 
 # Signals
 

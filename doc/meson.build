@@ -24,7 +24,7 @@ conf_data = configuration_data(
 )
 
 foreach man_src : [{'name': 'boot', 'section' : 1},
-                   {'name': 'boot.ini', 'section': 5},
+                   {'name': 'boot.lua', 'section': 5},
                    {'name': 'bootclient', 'section': 1},
                    {'name': 'boot-ctlseqs', 'section': 7}]
   name = man_src['name']

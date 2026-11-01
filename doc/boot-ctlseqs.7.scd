@@ -25,7 +25,7 @@ This document describes all the control sequences supported by boot.
 :< *Description*
 |  \\a
 :  BEL
-:  Depends on what *bell* in *boot.ini*(5) is set to.
+:  Depends on what *bell* in *boot.lua*(5) is set to.
 |  \\b
 :  BS
 :  Backspace; move the cursor left one step. Wrap if _bw_ is enabled.
@@ -176,25 +176,25 @@ m*.
 |  29
 :  Disable crossed-out
 |  30-37
-:  Select foreground color (using *regularN* in *boot.ini*(5))
+:  Select foreground color (using *regularN* in *boot.lua*(5))
 |  38
 :  Select foreground color, see "indexed and RGB colors" below
 |  39
-:  Use the default foreground color (*foreground* in *boot.ini*(5))
+:  Use the default foreground color (*foreground* in *boot.lua*(5))
 |  40-47
-:  Select background color (using *regularN* in *boot.ini*(5))
+:  Select background color (using *regularN* in *boot.lua*(5))
 |  48
 :  Select background color, see "indexed and RGB colors" below
 |  49
-:  Use the default background color (*background* in *boot.ini*(5))
+:  Use the default background color (*background* in *boot.lua*(5))
 |  58
 :  Select underline color, see "indexed and RGB colors" below
 |  59
 :  Use the default underline color
 |  90-97
-:  Select foreground color (using *brightN* in *boot.ini*(5))
+:  Select foreground color (using *brightN* in *boot.lua*(5))
 |  100-107
-:  Select background color (using *brightN* in *boot.ini*(5))
+:  Select background color (using *brightN* in *boot.lua*(5))
 
 ## Indexed and RGB colors (256-color palette and 24-bit colors)
 
@@ -315,7 +315,7 @@ that corresponds to one of the following modes:
 :  Send ESC when Meta modifies a key (see xterm metaSendsEscape option)
 |  1042
 :  xterm
-:  Perform action for BEL character (see *bell* in *boot.ini*(5))
+:  Perform action for BEL character (see *bell* in *boot.lua*(5))
 |  1047
 :  xterm
 :  Use alternate screen buffer
@@ -553,7 +553,7 @@ manipulation sequences. The generic format is:
 |  \\E[ _Ps_ SP q
 :  DECSCUSR
 :  VT510
-:  Set cursor style. In boot, _Ps_=0 means "use style from boot.ini".
+:  Set cursor style. In boot, _Ps_=0 means "use style from boot.lua".
 |  \\E[ = _Ps_ c
 :  DA3
 :  VT510
@@ -701,7 +701,7 @@ All _OSC_ sequences begin with *\\E]*, sometimes abbreviated _OSC_.
    hyperlink. An empty URI closes the hyperlink.
 |  \\E] 9 ; _msg_ \\E\\ 
 :  iTerm2
-:  Desktop notification, uses *notify* in *boot.ini*(5).
+:  Desktop notification, uses *notify* in *boot.lua*(5).
 |  \\E] 10 ; _spec_ \\E\\ 
 :  xterm
 :  Change the default foreground color to _spec_, a color in
@@ -744,7 +744,7 @@ All _OSC_ sequences begin with *\\E]*, sometimes abbreviated _OSC_.
 |  \\E] 99 ; _params_ ; _payload_ \\E\\ 
 :  kitty
 :  Desktop notification; uses *desktop-notifications.command* in
-   *boot.ini*(5).
+   *boot.lua*(5).
 |  \\E] 104 ; _c_ \\E\\ 
 :  xterm
 :  Reset color number _c_ (multiple semicolon separated _c_ values may
@@ -785,7 +785,7 @@ All _OSC_ sequences begin with *\\E]*, sometimes abbreviated _OSC_.
 |  \\E] 777;notify;_title_;_msg_ \\E\\ 
 :  urxvt
 :  Desktop notification, uses *desktop-notifications.command* in
-   *boot.ini*(5).
+   *boot.lua*(5).
 
 # DCS
 

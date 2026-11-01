@@ -16,6 +16,7 @@ packages:
   - utf8proc-dev
   - pixman-dev
   - libxkbcommon-dev
+  - luajit-dev
   - ncurses
   - python3
   - py3-pip

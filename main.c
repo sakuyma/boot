@@ -78,7 +78,7 @@ print_usage(const char *prog_name)
 {
     static const char options[] =
         "\nOptions:\n"
-        "  -c,--config=PATH                         load configuration from PATH ($XDG_CONFIG_HOME/boot/boot.ini)\n"
+        "  -c,--config=PATH                         load configuration from PATH ($XDG_CONFIG_HOME/boot/boot.lua)\n"
         "  -C,--check-config                        verify configuration, exit with 0 if ok, otherwise exit with 1\n"
         "  -o,--override=[section.]key=value        override configuration option\n"
         "  -f,--font=FONT                           comma separated list of fonts in fontconfig format (monospace)\n"

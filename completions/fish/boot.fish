@@ -1,5 +1,5 @@
 complete -c boot -x                            -a "(__fish_complete_subcommand)"
-complete -c boot -r -s c -l config                                                                    -d "path to configuration file (XDG_CONFIG_HOME/boot/boot.ini)"
+complete -c boot -r -s c -l config                                                                    -d "path to configuration file (XDG_CONFIG_HOME/boot/boot.lua)"
 complete -c boot    -s C -l check-config                                                              -d "verify configuration and exit with 0 if ok, otherwise exit with 1"
 complete -c boot -x -s o -l override                                                                  -d "configuration option to override, in form SECTION.KEY=VALUE"
 complete -c boot -x -s f -l font               -a "(fc-list : family | sed 's/,/\n/g' | sort | uniq)" -d "font name and style in fontconfig format (monospace)"

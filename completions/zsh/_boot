@@ -2,7 +2,7 @@
 
 _arguments \
     -s -S -C \
-    '(-c --config)'{-c,--config}'[path to configuration file (XDG_CONFIG_HOME/boot/boot.ini)]:config:_files' \
+    '(-c --config)'{-c,--config}'[path to configuration file (XDG_CONFIG_HOME/boot/boot.lua)]:config:_files' \
     '(-C --check-config)'{-C,--check-config}'[verify configuration and exit with 0 if ok, otherwise exit with 1]' \
     '(-o --override)'{-o,--override}'[configuration option to override, in form SECTION.KEY=VALUE]:()' \
     '(-f --font)'{-f,--font}'[font name and style in fontconfig format (monospace)]:font:->fonts' \

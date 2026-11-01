@@ -6,7 +6,7 @@ foot's sixel image support with the
 [Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
 
 The project has been renamed throughout: the binaries are `boot` and
-`bootclient`, the configuration file is `boot.ini`, the terminfo entry
+`bootclient`, the configuration file is `boot.lua`, the terminfo entry
 is `boot`, and the server socket is `boot-$WAYLAND_DISPLAY.sock`.
 
 This fork is maintained at <https://github.com/sakuyma/boot>.
@@ -81,12 +81,16 @@ See [INSTALL.md](INSTALL.md).
 ## Configuration
 
 **boot** can be configured by creating a file
-`$XDG_CONFIG_HOME/boot/boot.ini` (defaulting to
-`~/.config/boot/boot.ini`).  A template for that can usually be found
-in `/etc/xdg/boot/boot.ini` or
-[here](boot.ini).
+`$XDG_CONFIG_HOME/boot/boot.lua` (defaulting to
+`~/.config/boot/boot.lua`).  A template for that can usually be found
+in `/etc/xdg/boot/boot.lua` or
+[here](boot.lua).
 
-Further information can be found in boot's man page `boot.ini(5)`.
+The configuration file is a Lua script, executed by LuaJIT. It must
+return a table, mapping section names to tables of option/value
+pairs.
+
+Further information can be found in boot's man page `boot.lua(5)`.
 
 
 ## Troubleshooting
@@ -123,8 +127,8 @@ fonts, _then_ fontconfig's list is used.
 
 ## Shortcuts
 
-These are the default shortcuts. See `man boot.ini` and the example
-`boot.ini` to see how these can be changed.
+These are the default shortcuts. See `man boot.lua` and the example
+`boot.lua` to see how these can be changed.
 
 
 ### Keyboard
@@ -317,7 +321,7 @@ sequence_ (e.g. **"AF"**) to use to activate the URL.
 
 The key binding can, of course, be customized, like all other key
 bindings in boot. See `show-urls-launch` and `show-urls-copy` in the
-`boot.ini` man page.
+`boot.lua` man page.
 
 `show-urls-launch` by default opens the URL with `xdg-open`. This can
 be changed with the `url-launch` option.
@@ -487,8 +491,8 @@ distance) the font size will appear to change when you move the boot
 window across different monitors, **unless** you have configured the
 monitors' scaling factors correctly in the compositor.
 
-This can be changed by setting the `dpi-aware` option to `yes` in
-`boot.ini`. When enabled, fonts will **not** be sized using the
+This can be changed by setting the `dpi-aware` option to `true` in
+`boot.lua`. When enabled, fonts will **not** be sized using the
 scaling factor, but will instead be sized using the monitor's
 DPI. When the boot window is moved across monitors, the font size is
 updated for the current monitor's DPI.

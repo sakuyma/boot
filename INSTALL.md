@@ -44,6 +44,7 @@ subprojects.
 * pixman
 * wayland (_client_ and _cursor_ libraries)
 * xkbcommon
+* LuaJIT (the configuration file is a Lua script)
 * utf8proc (_optional_, needed for grapheme clustering)
 * libutempter (_optional_, needed for utmp logging on Linux)
 * ulog (_optional_, needed for utmp logging on FreeBSD)

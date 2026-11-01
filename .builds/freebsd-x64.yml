@@ -14,6 +14,7 @@ packages:
   - utf8proc
   - pixman
   - libxkbcommon
+  - luajit
   - check
   - hack-font
   - noto-emoji

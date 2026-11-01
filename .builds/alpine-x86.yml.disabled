@@ -17,6 +17,7 @@ packages:
   - utf8proc-dev
   - pixman-dev
   - libxkbcommon-dev
+  - luajit-dev
   - ncurses
   - check-dev
   - ttf-hack

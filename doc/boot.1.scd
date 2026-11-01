@@ -25,10 +25,10 @@ the boot command line
 # OPTIONS
 
 *-c*,*--config*=_PATH_
-	Path to configuration file, see *boot.ini*(5) for details.
+	Path to configuration file, see *boot.lua*(5) for details.
 
 	The configuration file is automatically passed to new terminals
-	spawned via *spawn-terminal* (see *boot.ini*(5)).
+	spawned via *spawn-terminal* (see *boot.lua*(5)).
 
 *-C*,*--check-config*
 	Verify configuration and then exit with 0 if ok, otherwise exit
@@ -186,8 +186,8 @@ the boot command line
 # KEYBOARD SHORTCUTS
 
 The following keyboard shortcuts are available by default. They can be
-changed in *boot.ini*(5). There are also more actions (disabled by
-default) available; see *boot.ini*(5).
+changed in *boot.lua*(5). There are also more actions (disabled by
+default) available; see *boot.lua*(5).
 
 ## NORMAL MODE
 
@@ -406,7 +406,7 @@ _"jump-label"_. The jump-label indicates the _key sequence_
 
 The key binding can, of course, be customized, like all other key
 bindings in boot. See *show-urls-launch* and *show-urls-copy* in
-*boot.ini*(5).
+*boot.lua*(5).
 
 *show-urls-launch* by default opens the URL with *xdg-open*. This can
 be changed with the *url-launch* option.
@@ -468,15 +468,15 @@ numbers, when in _application_ mode.
 boot will search for a configuration file in the following locations,
 in this order:
 
-	- *XDG_CONFIG_HOME/boot/boot.ini* (defaulting to
-	  *$HOME/.config/boot/boot.ini* if unset)
-	- *XDG_CONFIG_DIRS/boot/boot.ini* (defaulting to
-	  */etc/xdg/boot/boot.ini* if unset)
+	- *XDG_CONFIG_HOME/boot/boot.lua* (defaulting to
+	  *$HOME/.config/boot/boot.lua* if unset)
+	- *XDG_CONFIG_DIRS/boot/boot.lua* (defaulting to
+	  */etc/xdg/boot/boot.lua* if unset)
 
 An example configuration file containing all options with their default value
-commented out will usually be installed to */etc/xdg/boot/boot.ini*.
+commented out will usually be installed to */etc/xdg/boot/boot.lua*.
 
-For more information, see *boot.ini*(5).
+For more information, see *boot.lua*(5).
 
 # SHELL INTEGRATION
 
@@ -516,8 +516,9 @@ The key binding *pipe-command-output* can pipe the last command's
 output to an application of your choice (similar to the other
 *pipe-\** key bindings):
 
-	*\[key-bindings\]++
-pipe-command-output=[sh -c "f=$(mktemp); cat - > $f; bootclient emacsclient -nw $f; rm $f"] Control+Shift+g*
+	*["key-bindings"] = {*++
+	*    ["pipe-command-output"] = [[[sh -c "f=$(mktemp); cat - > $f; bootclient emacsclient -nw $f; rm $f"] Control+Shift+g]],*++
+	*}*
 
 When pressing *ctrl*+*shift*+*g*, the last command's output is written
 to a temporary file, then an emacsclient is started in a new
@@ -634,19 +635,19 @@ In all other cases, the exit code is that of the client application
 
 *SHELL*
 	The default child process to run, when no _command_ argument is
-	specified and the *shell* option in *boot.ini*(5) is not set.
+	specified and the *shell* option in *boot.lua*(5) is not set.
 
 *HOME*
 	Used to determine the location of the configuration file, see
-	*boot.ini*(5) for details.
+	*boot.lua*(5) for details.
 
 *XDG\_CONFIG\_HOME*
 	Used to determine the location of the configuration file, see
-	*boot.ini*(5) for details.
+	*boot.lua*(5) for details.
 
 *XDG\_CONFIG\_DIRS*
 	Used to determine the location of the configuration file, see
-	*boot.ini*(5) for details.
+	*boot.lua*(5) for details.
 
 *XDG\_RUNTIME\_DIR*
 	Used to construct the default _PATH_ for the *--server*
@@ -670,7 +671,7 @@ In all other cases, the exit code is that of the client application
 	terminfo/termcap identifier. This is used by client applications
 	to determine which capabilities a terminal supports. The value is
 	set according to either the *--term* command-line option or the
-	*term* config option in *boot.ini*(5).
+	*term* config option in *boot.lua*(5).
 
 *COLORTERM*
 	This variable is set to *truecolor*, to indicate to client
@@ -684,7 +685,7 @@ In all other cases, the exit code is that of the client application
 	*/etc/shells*).
 
 In addition to the variables listed above, custom environment
-variables may be defined in *boot.ini*(5).
+variables may be defined in *boot.lua*(5).
 
 ## Variables *unset* in the child process
 
@@ -695,7 +696,7 @@ variables may be defined in *boot.ini*(5).
 	misdetecting boot.
 
 In addition to the variables listed above, custom environment
-variables to unset may be defined in *boot.ini*(5).
+variables to unset may be defined in *boot.lua*(5).
 
 # Signals
 
@@ -735,4 +736,4 @@ The report should contain the following:
 
 # SEE ALSO
 
-*boot.ini*(5), *bootclient*(1)
+*boot.lua*(5), *bootclient*(1)

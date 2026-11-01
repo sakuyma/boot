@@ -1,35 +1,53 @@
-boot.ini(5)
+boot.lua(5)
 
 # NAME
 
-boot.ini - configuration file for *boot*(1)
+boot.lua - configuration file for *boot*(1)
 
 # DESCRIPTION
 
-*boot* uses the standard _unix configuration format_, with section based
-key/value pairs. The default section is usually unnamed, i.e. not prefixed
-with a _[section]_. However it can also be explicitly named _[main]_,
-say if it needs to be reopened after any of the other sections.
+*boot* is configured with a Lua script, executed by the LuaJIT
+interpreter. The script must return a table. Each top level key is a
+section name, and maps to a table of option/value pairs:
+
+	*return {*++
+	*    ["colors-dark"] = {*++
+	*        background = "000000",*++
+	*        foreground = "ffffff",*++
+	*    },*++
+	*}*
+
+Values may be strings, numbers or booleans. Colors are strings,
+without a leading '#'.
+
+Section and option names are used verbatim. Since most of them contain
+a '-', they must be quoted in the table (as *["colors-dark"]* above).
+
+A table value is interpreted as a list, and the option is applied once
+for each element. This is mainly useful for options that may be
+specified multiple times, such as key bindings:
+
+	*["key-bindings"] = {*++
+	*    ["clipboard-copy"] = { "Control+Shift+c", "XF86Copy" },*++
+	*}*
+
+Options that take a comma separated list of fonts (*font*,
+*font-bold*, *font-italic*, *font-bold-italic*) are joined into a
+single value instead.
+
+Since the configuration file is a Lua script, it may contain arbitrary
+code, e.g. loops, conditionals and calls to *dofile*().
 
 boot will search for a configuration file in the following locations,
 in this order:
 
-	- *XDG_CONFIG_HOME/boot/boot.ini* (defaulting to
-	  *$HOME/.config/boot/boot.ini* if unset)
-	- *XDG_CONFIG_DIRS/boot/boot.ini* (defaulting to
-	  */etc/xdg/boot/boot.ini* if unset)
+	- *XDG_CONFIG_HOME/boot/boot.lua* (defaulting to
+	  *$HOME/.config/boot/boot.lua* if unset)
+	- *XDG_CONFIG_DIRS/boot/boot.lua* (defaulting to
+	  */etc/xdg/boot/boot.lua* if unset)
 
 An example configuration file containing all options with their default value
-commented out will usually be installed to */etc/xdg/boot/boot.ini*.
-
-Options are set using KEY=VALUE pairs:
-
-	*\[colors-dark\]*++
-*background=000000*++
-*foreground=ffffff*
-
-Empty values (*KEY=*) are not supported. String options do allow the
-empty string to be set, but it must be quoted: *KEY=""*
+commented out will usually be installed to */etc/xdg/boot/boot.lua*.
 
 # SECTION: main
 
@@ -100,25 +118,25 @@ empty string to be set, but it must be quoted: *KEY=""*
 	
 	Examples:
 	```
-	font-size-adjustment=0.5   # Adjust by 0.5 points
-	font-size-adjustment=10px  # Adjust by 10 pixels
-	font-size-adjustment=7.5%  # Adjust by 7.5 percent
+	["font-size-adjustment"] = 0.5    -- Adjust by 0.5 points
+	["font-size-adjustment"] = "10px" -- Adjust by 10 pixels
+	["font-size-adjustment"] = "7.5%" -- Adjust by 7.5 percent
 	```
 	
 	Default: _0.5_
 
 *include*
-	Absolute path to configuration file to import.
-	
-	The import file has its own section scope. I.e. the including
-	configuration is still in the default section after the include,
-	regardless of which section the included file ends in.
-	
+	Path to another configuration file, which is loaded and applied
+	as if it were part of this file. The included file is a Lua
+	script, just like the main configuration file.
+
 		- The path must be an absolute path, or start with *~/*.
-		- Multiple include directives are allowed, but only one path per
-		  directive.
+		- The option may be specified multiple times.
 		- Nested imports are allowed.
-	
+
+	Since the configuration file is a Lua script, *dofile*() can be
+	used instead, if the included file simply returns a table.
+
 	Default: _not set_.
 
 *line-height*
@@ -501,9 +519,11 @@ This section is used to define environment variables that will be set
 in the client application, in addition to the variables inherited from
 the terminal process itself.
 
-The format is simply:
+The variables are set as keys in the *environment* table:
 
-*name*=_value_
+	*environment = {*++
+	*    NAME = "value",*++
+	*}*
 
 Note: do not set *TERM* here; use the *term* option in the main
 (default) section instead.
@@ -896,7 +916,7 @@ section.
 	jump labels.
 	
 	If you change this option to include the letter *t*, you should
-	also change the default *[url-bindings].toggle-url-visible* key
+	also change the default *url-bindings.toggle-url-visible* key
 	binding to avoid a clash.
 	
 	Default: _sadfjklewcmpgh_.
@@ -921,13 +941,17 @@ for details. For example, a regex to detect hash digests (e.g. git
 commit hashes) could look like:
 
 ```
-[regex:hashes]
-regex=([a-fA-F0-9]{7,128})
-launch=path-to-script-or-application ${match}
+regex = {
+    hashes = {
+        regex = "([a-fA-F0-9]{7,128})",
+        launch = "path-to-script-or-application ${match}",
+    },
+}
 
-[key-bindings]
-regex-launch=[hashes] Control+Shift+q
-regex-copy=[hashes] Control+Mod1+Shift+q
+["key-bindings"] = {
+    ["regex-launch"] = "[hashes] Control+Shift+q",
+    ["regex-copy"] = "[hashes] Control+Mod1+Shift+q",
+}
 ```
 
 *launch*
@@ -1097,7 +1121,7 @@ The default theme used is *colors-dark*, unless
 	colors at runtime. However, they have no way of changing the
 	*dimN* colors. If an application has changed the *regularN*
 	colors, boot will still use the corresponding *dimN* color, as
-	configured in boot.ini.
+	configured in boot.lua.
 	
 	Default: _not set_.
 
@@ -1265,10 +1289,15 @@ Examples:
 
 This section lets you override the default key bindings.
 
-The general format is _action=combo1...comboN_. That is, each action
-may have one or more key combinations, space separated. Each
-combination is in the form _mod1+mod2+key_. The names of the modifiers
-and the key *must* be valid XKB key names.
+In this section, the option name is the action, and its value is one
+or more key combinations, space separated. Each combination is in the
+form _mod1+mod2+key_. The names of the modifiers and the key *must* be
+valid XKB key names.
+
+	*["key-bindings"] = {*++
+	*    ["clipboard-copy"] = "Control+Shift+c",*++
+	*    ["font-increase"] = { "Control+plus", "Control+equal" },*++
+	*}*
 
 Note that if *Shift* is one of the modifiers, the _key_ *must not* be
 in upper case. For example, *Control+Shift+V* will never trigger, but
@@ -1430,15 +1459,19 @@ e.g. *search-start=none*.
 	
 	The name of the regex section must be specified in the key
 	binding:
-	
+
 	```
-	[regex:hashes]
-	regex=([a-fA-F0-9]{7,128})
-	launch=path-to-script-or-application ${match}
-	
-	[key-bindings]
-	regex-launch=[hashes] Control+Shift+q
-	regex-copy=[hashes] Control+Mod1+Shift+q
+	regex = {
+	    hashes = {
+	        regex = "([a-fA-F0-9]{7,128})",
+	        launch = "path-to-script-or-application ${match}",
+	    },
+	}
+
+	["key-bindings"] = {
+	    ["regex-launch"] = "[hashes] Control+Shift+q",
+	    ["regex-copy"] = "[hashes] Control+Mod1+Shift+q",
+	}
 	```
 	
 	Default: _none_.
@@ -1648,7 +1681,7 @@ This section lets you override the default key bindings used in URL
 mode. The syntax is exactly the same as the regular **key-bindings**.
 
 Be careful; do not use single-letter keys that are also used in
-*[url].label-letters*, as doing so will make some URLs inaccessible.
+*url.label-letters*, as doing so will make some URLs inaccessible.
 
 *cancel*
 	Exits URL mode without opening a URL. Default: _Control+g
@@ -1673,9 +1706,9 @@ Be careful; do not use single-letter keys that are also used in
 This section lets you remap key combinations to custom escape
 sequences.
 
-The format is _text=combo1...comboN_. That is, the string to emit may
-have one or more key combinations, space separated. Each combination
-is in the form _mod1+mod2+key_. The names of the modifiers and the key
+In this section, the option name is the text to emit, and its value is
+one or more key combinations, space separated. Each combination is in
+the form _mod1+mod2+key_. The names of the modifiers and the key
 *must* be valid XKB key names.
 
 The text string specifies the characters, or bytes, to emit when the
@@ -1686,27 +1719,24 @@ specify a character:
 - Bytes (e.g. ESC) are written as two-digit hexadecimal numbers, with
   a *\\x* prefix: *\\x1b*.
 
-Example: you would like to remap _Super+k_ to the _Up_ key.
+Example: you would like to remap _Super+k_ to the _Up_ key, and
+_Super+c_ to _Control+c_ (*Mod4* is the XKB name for the Super/logo
+key):
 
-The escape sequence for the Up key is _ESC [ A_ (without the
-spaces). Thus, we need to specify this in boot.ini (*Mod4* is the XKB
-name for the Super/logo key):
-
-*\\x1b[A = Mod4+k*
-
-Another example: to remap _Super+c_ to _Control+c_:
-
-*\\x03 = Mod4+c*
+	*["text-bindings"] = {*++
+	*    [[\\x1b[A]] = "Mod4+k", -- Up*++
+	*    [[\\x03]] = "Mod4+c", -- Ctrl+c*++
+	*}*
 
 # SECTION: mouse-bindings
 
 This section lets you override the default mouse bindings.
 
-The general format is _action=combo1...comboN_. That is, each action
-may have one or more key combinations, space separated. Each
-combination is in the form _mod1+mod2+BTN\_<name>[-COUNT]_. The names
-of the modifiers *must* be valid XKB key names, and the button name
-*must* be a valid libinput name. You can find the button names using
+In this section, the option name is the action, and its value is one
+or more mouse button combinations, space separated. Each combination
+is in the form _mod1+mod2+BTN\_<name>[-COUNT]_. The names of the
+modifiers *must* be valid XKB key names, and the button name *must* be
+a valid libinput name. You can find the button names using
 *libinput debug-events*.
 
 The trailing *COUNT* (number of times the button has to be clicked) is

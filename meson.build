@@ -156,6 +156,7 @@ fontconfig = dependency('fontconfig')
 utf8proc = dependency('libutf8proc', required: get_option('grapheme-clustering'))
 zlib = dependency('zlib')
 libpng = dependency('libpng', required: false)
+luajit = dependency('luajit')
 
 if libpng.found()
   add_project_arguments('-DHAVE_LIBPNG=1', language: 'c')
@@ -352,7 +353,7 @@ executable(
   'xkbcommon-vmod.h',
   srgb_funcs, wl_proto_src + wl_proto_headers, version,
   dependencies: [math, threads, libepoll, pixman, wayland_client, wayland_cursor, xkb, fontconfig, utf8proc,
-                 tllist, fcft],
+                 tllist, fcft, luajit],
   link_with: pgolib,
   install: true)
 
@@ -397,7 +398,7 @@ if systemd.found() or custom_systemd_units_dir != ''
 endif
 
 scdoc = dependency('scdoc', native: true, required: get_option('docs'))
-install_data('boot.ini', install_dir: join_paths(get_option('sysconfdir'), 'xdg', 'boot'))
+install_data('boot.lua', install_dir: join_paths(get_option('sysconfdir'), 'xdg', 'boot'))
 if scdoc.found()
   install_data(
     'LICENSE', 'README.md', 'CHANGELOG.md',
